@@ -454,6 +454,13 @@ describe('GameBoard pointer path', () => {
       clientX: 150,
       clientY: 150,
     })
+
+    expect(draftCell).toHaveAttribute('data-path-next', 'down')
+    expect(firstStartCell).toHaveAttribute('data-path-prev', 'up')
+    expect(firstStartCell).toHaveAttribute('data-path-next', 'right')
+    expect(secondStartCell).toHaveAttribute('data-path-prev', 'left')
+    expect(firstStartCell).not.toHaveAttribute('data-path-order')
+
     fireEvent.pointerUp(board, {
       pointerId: 7,
       clientX: 150,

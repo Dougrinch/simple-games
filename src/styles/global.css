@@ -392,6 +392,8 @@ button:disabled {
 }
 
 .game-board {
+  --board-gap: clamp(4px, 1.5vw, 7px);
+
   display: grid;
   width: 100%;
   aspect-ratio: 1;
@@ -399,11 +401,11 @@ button:disabled {
   user-select: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: clamp(4px, 1.5vw, 7px);
+  gap: var(--board-gap);
 }
 
 .board-cell {
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   min-width: 44px;
   min-height: 44px;
@@ -417,6 +419,7 @@ button:disabled {
   font-family: Georgia, serif;
   font-size: clamp(1.45rem, 8.5vw, 2.6rem);
   font-weight: 900;
+  isolation: isolate;
 }
 
 .board-cell:empty,
@@ -440,28 +443,100 @@ button:disabled {
 }
 
 .board-cell.is-last-path {
+  z-index: 1;
   border-color: rgb(113 217 154 / 46%);
   box-shadow:
     inset 0 0 0 2px rgb(113 217 154 / 17%),
     inset 0 -4px 0 rgb(0 0 0 / 16%);
 }
 
-.board-cell.is-last-path::before,
-.board-cell.is-in-path::before {
-  display: grid;
-  width: 18px;
-  height: 18px;
+.board-letter {
+  position: relative;
+  z-index: 2;
+}
+
+.last-path-ribbon,
+.gesture-path-ribbon {
+  --ribbon-color: var(--green);
+  --ribbon-glow: rgb(113 217 154 / 22%);
+
   border-radius: 50%;
+  display: none;
   position: absolute;
-  top: 4px;
-  left: 4px;
-  color: #112018;
-  background: var(--green);
-  content: attr(data-last-order);
-  font-family: inherit;
-  font-size: 0.65rem;
-  font-weight: 900;
-  place-items: center;
+  z-index: 1;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    var(--ribbon-color) 0 5px,
+    var(--ribbon-glow) 6px 10px,
+    transparent 11px
+  );
+  pointer-events: none;
+}
+
+.gesture-path-ribbon {
+  --ribbon-color: var(--gold);
+  --ribbon-glow: rgb(246 202 91 / 24%);
+}
+
+.board-cell.is-last-path .last-path-ribbon {
+  display: block;
+}
+
+.last-path-ribbon::before,
+.last-path-ribbon::after,
+.gesture-path-ribbon::before,
+.gesture-path-ribbon::after {
+  width: calc(50% + var(--board-gap) / 2 + 1px);
+  height: clamp(6px, 2.1vw, 9px);
+  border-radius: 999px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background:
+    linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 26%),
+      transparent 45%
+    ),
+    var(--ribbon-color);
+  box-shadow: 0 0 8px var(--ribbon-glow);
+  content: "";
+  opacity: 0;
+  transform: translateY(-50%);
+  transform-origin: left center;
+}
+
+.board-cell[data-last-prev="up"] .last-path-ribbon::before,
+.board-cell[data-path-prev="up"] .gesture-path-ribbon::before,
+.board-cell[data-last-next="up"] .last-path-ribbon::after,
+.board-cell[data-path-next="up"] .gesture-path-ribbon::after {
+  opacity: 1;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.board-cell[data-last-prev="right"] .last-path-ribbon::before,
+.board-cell[data-path-prev="right"] .gesture-path-ribbon::before,
+.board-cell[data-last-next="right"] .last-path-ribbon::after,
+.board-cell[data-path-next="right"] .gesture-path-ribbon::after {
+  opacity: 1;
+  transform: translateY(-50%) rotate(0deg);
+}
+
+.board-cell[data-last-prev="down"] .last-path-ribbon::before,
+.board-cell[data-path-prev="down"] .gesture-path-ribbon::before,
+.board-cell[data-last-next="down"] .last-path-ribbon::after,
+.board-cell[data-path-next="down"] .gesture-path-ribbon::after {
+  opacity: 1;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.board-cell[data-last-prev="left"] .last-path-ribbon::before,
+.board-cell[data-path-prev="left"] .gesture-path-ribbon::before,
+.board-cell[data-last-next="left"] .last-path-ribbon::after,
+.board-cell[data-path-next="left"] .gesture-path-ribbon::after {
+  opacity: 1;
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .board-cell.is-last-letter::after {
@@ -475,14 +550,18 @@ button:disabled {
 }
 
 .board-cell.is-in-path {
+  z-index: 2;
   border-color: var(--gold);
   background: #4b4528;
   transform: scale(0.96);
 }
 
-.board-cell.is-in-path::before {
-  background: var(--gold);
-  content: attr(data-path-order);
+.board-cell.is-in-path .last-path-ribbon {
+  display: none;
+}
+
+.board-cell.is-in-path .gesture-path-ribbon {
+  display: block;
 }
 
 .board-cell.is-path-invalid {
@@ -490,9 +569,9 @@ button:disabled {
   background: #4a2925;
 }
 
-.board-cell.is-path-invalid::before {
-  color: #26100e;
-  background: var(--red);
+.board-cell.is-path-invalid .gesture-path-ribbon {
+  --ribbon-color: var(--red);
+  --ribbon-glow: rgb(255 141 126 / 28%);
 }
 
 .gesture-hint {

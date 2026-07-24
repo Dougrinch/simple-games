@@ -26,12 +26,44 @@ interface GestureState {
   invalidMessage: string | null
 }
 
+type PathDirection = 'up' | 'right' | 'down' | 'left'
+
 const CELL_KEYS = Array.from({ length: 25 }, (_, index) =>
   coordinateToCellKey({
     row: Math.floor(index / 5) as 0 | 1 | 2 | 3 | 4,
     col: (index % 5) as 0 | 1 | 2 | 3 | 4,
   }),
 )
+
+function directionTo(
+  fromCell: CellKey,
+  toCell: CellKey | undefined,
+): PathDirection | undefined {
+  if (!toCell) {
+    return undefined
+  }
+
+  const from = parseCellKey(fromCell)
+  const to = parseCellKey(toCell)
+  if (!from || !to) {
+    return undefined
+  }
+
+  if (to.row < from.row) {
+    return 'up'
+  }
+  if (to.col > from.col) {
+    return 'right'
+  }
+  if (to.row > from.row) {
+    return 'down'
+  }
+  if (to.col < from.col) {
+    return 'left'
+  }
+
+  return undefined
+}
 
 function cellFromPoint(clientX: number, clientY: number): CellKey | null {
   const element = document.elementFromPoint?.(clientX, clientY)
@@ -96,7 +128,14 @@ export function GameBoard({
     )) {
       const key = cellElement.dataset.cellKey as CellKey
       const order = gesture.path.indexOf(key)
-      cellElement.dataset.pathOrder = order >= 0 ? String(order + 1) : ''
+      cellElement.dataset.pathPrev =
+        order >= 0
+          ? (directionTo(key, gesture.path[order - 1]) ?? '')
+          : ''
+      cellElement.dataset.pathNext =
+        order >= 0
+          ? (directionTo(key, gesture.path[order + 1]) ?? '')
+          : ''
       cellElement.classList.toggle('is-in-path', order >= 0)
       cellElement.classList.toggle(
         'is-path-invalid',
@@ -120,7 +159,8 @@ export function GameBoard({
     for (const cellElement of boardElement.querySelectorAll<HTMLElement>(
       '[data-cell-key]',
     )) {
-      cellElement.dataset.pathOrder = ''
+      cellElement.dataset.pathPrev = ''
+      cellElement.dataset.pathNext = ''
       cellElement.classList.remove('is-in-path', 'is-path-invalid')
     }
   }
@@ -222,6 +262,14 @@ export function GameBoard({
           const letter = isDraft ? draft.letter : cell?.letter
           const lastPathOrder = lastMove?.path.indexOf(cellKey) ?? -1
           const isLastLetter = lastMove?.cell === cellKey
+          const lastPathPrevious =
+            lastPathOrder >= 0
+              ? directionTo(cellKey, lastMove?.path[lastPathOrder - 1])
+              : undefined
+          const lastPathNext =
+            lastPathOrder >= 0
+              ? directionTo(cellKey, lastMove?.path[lastPathOrder + 1])
+              : undefined
           const label = letter
             ? `Клетка ${cellKey.replace('_', ', ')}, буква ${letter}${
                 isDraft ? ', черновик' : ''
@@ -243,9 +291,8 @@ export function GameBoard({
               role="gridcell"
               key={cellKey}
               data-cell-key={cellKey}
-              data-last-order={
-                lastPathOrder >= 0 ? String(lastPathOrder + 1) : undefined
-              }
+              data-last-prev={lastPathPrevious}
+              data-last-next={lastPathNext}
               aria-label={label}
               aria-disabled={disabled}
               onClick={() => {
@@ -256,7 +303,11 @@ export function GameBoard({
                 onCellPress(cellKey)
               }}
             >
-              <span aria-hidden="true">{letter}</span>
+              <span className="last-path-ribbon" aria-hidden="true" />
+              <span className="gesture-path-ribbon" aria-hidden="true" />
+              <span className="board-letter" aria-hidden="true">
+                {letter}
+              </span>
             </button>
           )
         })}
