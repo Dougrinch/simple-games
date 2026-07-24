@@ -5,7 +5,7 @@ import { App } from './App'
 
 vi.mock('../platform/firebase/connectionCheck', () => ({
   isFirebaseEmulatorMode: () => true,
-  readStartWordCountFromEmulator: vi.fn().mockResolvedValue(147),
+  readStartWordCountFromEmulator: vi.fn().mockResolvedValue(1554),
 }))
 
 describe('App', () => {
@@ -13,6 +13,6 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
-    expect(await screen.findByText('147')).toBeInTheDocument()
+    expect(await screen.findByText('1554')).toBeInTheDocument()
   })
 })

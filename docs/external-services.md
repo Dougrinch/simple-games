@@ -158,7 +158,7 @@ Workflow устанавливает зависимости через lock-фа�
 - Realtime Database создана не в test mode.
 - Rules развёрнуты из `database.rules.json`.
 - `meta/schemaVersion` равен `1`.
-- `dictionaries/balda/startWords/count` равен `147`.
+- `dictionaries/balda/startWords/count` равен `1554`.
 - В GitHub заданы все восемь Repository Variables.
 - Pages использует GitHub Actions.
 - Workflow на `main` проходит полностью.

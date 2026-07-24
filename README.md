@@ -30,7 +30,7 @@ cp .env.emulator.example .env.local
 # Терминал 1: Auth, Realtime Database и Emulator UI
 npm run emulators
 
-# Терминал 2: импорт schemaVersion и 147 стартовых слов
+# Терминал 2: импорт schemaVersion и 1554 стартовых слов
 npm run emulators:seed
 
 # Терминал 3: приложение
@@ -45,7 +45,7 @@ npm run dev
 После запуска приложение автоматически создаёт разрешённого тестового
 пользователя только в Auth Emulator и читает
 `dictionaries/balda/startWords/count`. Успешная проверка отображается на странице
-как `Соединение с базой есть. Слов в базе: 147`. Если приложение было открыто до
+как `Соединение с базой есть. Слов в базе: 1554`. Если приложение было открыто до
 импорта данных, перезагрузите страницу после `npm run emulators:seed`.
 
 `.env.local` уже создан в текущем рабочем каталоге и исключён из Git. Команда
@@ -74,7 +74,13 @@ Database в пользовательский кеш Firebase CLI.
 - `.env.local` — локальные значения, не попадают в Git.
 - `firebase.json` — порты эмуляторов и путь к Security Rules.
 - `.firebaserc` — безопасный локальный проект `demo-simple-games`.
-- `firebase-data/seed.json` — версия схемы и 147 уникальных стартовых слов.
+- `firebase-data/seed.json` — версия схемы и 1554 уникальных стартовых слова.
+
+Стартовый список сформирован по морфологическому словарю
+[OpenCorpora](https://opencorpora.org/?page=downloads) (CC BY-SA) и отфильтрован
+по частотному списку [University of Leeds Corpus](https://github.com/hingston/russian)
+(CC BY). Из результата вручную исключены имена собственные, устаревшая,
+жаргонная и узкоспециальная лексика.
 
 Проверка переменных вызывается production-сборкой. `VITE_BASE_PATH` должен иметь
 начальный и конечный слеш: `/` локально и `/simple-games/` на GitHub Pages.
