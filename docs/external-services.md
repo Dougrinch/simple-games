@@ -45,6 +45,12 @@ Firebase Web API key и остальные поля Web App видны в кли
 являются серверными секретами. Защиту обеспечивает Authentication вместе с
 Security Rules. JSON-ключ сервисного аккаунта этому приложению не нужен.
 
+Приложение открывает Google Sign-In во всплывающем окне. Redirect-вход здесь
+намеренно не используется: приложение опубликовано на GitHub Pages, а стандартный
+Firebase auth helper работает на другом домене (`firebaseapp.com`). В браузерах,
+ограничивающих стороннее хранилище, такой redirect может успешно пройти Google,
+но потерять результат после возврата на `github.io`.
+
 ### Включить Google Authentication
 
 1. Откройте `Build → Authentication → Get started`.

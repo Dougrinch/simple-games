@@ -1,11 +1,7 @@
-import { FirebaseError } from 'firebase/app'
 import {
-  browserLocalPersistence,
-  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
-  setPersistence,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth'
@@ -21,20 +17,6 @@ export type AuthSession =
   | { status: 'forbidden'; email: string | null }
   | { status: 'authorized'; playerId: PlayerId; user: User }
   | { status: 'error'; message: string }
-
-const SILENT_REDIRECT_ERRORS = new Set([
-  'auth/redirect-cancelled-by-user',
-  'auth/cancelled-popup-request',
-  'auth/popup-closed-by-user',
-])
-
-let redirectResultCheck: Promise<string | null> | null = null
-
-function isSilentRedirectError(error: unknown): boolean {
-  return (
-    error instanceof FirebaseError && SILENT_REDIRECT_ERRORS.has(error.code)
-  )
-}
 
 async function saveOwnProfile(user: User, playerId: PlayerId): Promise<void> {
   const { database } = getFirebaseServices()
@@ -67,27 +49,6 @@ export function subscribeAuthSession(
 ): () => void {
   const { auth } = getFirebaseServices()
   let active = true
-  let redirectErrorMessage: string | undefined
-
-  redirectResultCheck ??= getRedirectResult(auth)
-    .then(() => null)
-    .catch((error: unknown) => {
-      if (isSilentRedirectError(error)) {
-        return null
-      }
-      console.error('Google redirect sign-in failed.', error)
-      return 'Не получилось войти. Попробуй ещё раз.'
-    })
-
-  void redirectResultCheck.then((message) => {
-    if (!active || !message) {
-      return
-    }
-    redirectErrorMessage = message
-    if (!auth.currentUser) {
-      listener({ status: 'signed-out', message })
-    }
-  })
 
   const unsubscribe = onAuthStateChanged(
     auth,
@@ -97,7 +58,7 @@ export function subscribeAuthSession(
       }
 
       if (!user) {
-        listener({ status: 'signed-out', message: redirectErrorMessage })
+        listener({ status: 'signed-out' })
         return
       }
 
@@ -132,8 +93,7 @@ export function subscribeAuthSession(
 
 export async function startGoogleSignIn(): Promise<void> {
   const { auth } = getFirebaseServices()
-  await setPersistence(auth, browserLocalPersistence)
-  await signInWithRedirect(auth, new GoogleAuthProvider())
+  await signInWithPopup(auth, new GoogleAuthProvider())
 }
 
 export async function signOutCurrentUser(): Promise<void> {
