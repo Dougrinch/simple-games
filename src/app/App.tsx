@@ -488,7 +488,6 @@ function AuthorizedGame({
       onSubmitMove={(move) => void submitMove(move)}
       onRollback={() => void rollback()}
       onCreateGame={() => void createGame()}
-      onSignOut={onSignOut}
     />
   )
 }

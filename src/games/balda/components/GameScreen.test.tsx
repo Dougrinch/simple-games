@@ -85,7 +85,6 @@ function gameScreenProps(
     onSubmitMove: vi.fn(),
     onRollback: vi.fn(),
     onCreateGame: vi.fn(),
-    onSignOut: vi.fn(),
     ...overrides,
   }
 }
@@ -113,9 +112,14 @@ describe('GameScreen', () => {
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
-        onSignOut={vi.fn()}
       />,
     )
+
+    expect(screen.queryByText(/Балда · партия/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Собери слово')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Выйти' }),
+    ).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
@@ -144,7 +148,6 @@ describe('GameScreen', () => {
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
-        onSignOut={vi.fn()}
       />,
     )
 
@@ -175,7 +178,6 @@ describe('GameScreen', () => {
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
-        onSignOut={vi.fn()}
       />,
     )
 
@@ -342,9 +344,6 @@ describe('GameScreen', () => {
     )
     render(<GameScreen {...gameScreenProps({ game: completed })} />)
 
-    expect(
-      screen.getByRole('heading', { name: 'Партия окончена' }),
-    ).toBeInTheDocument()
     expect(screen.getByText('Победил hinhillaa')).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Ой, шучушучу' }),

@@ -32,7 +32,6 @@ interface GameScreenProps {
   onSubmitMove: (draft: MoveDraft) => void
   onRollback: () => void
   onCreateGame: () => void
-  onSignOut: () => void
 }
 
 function playerName(
@@ -58,7 +57,6 @@ export function GameScreen({
   onSubmitMove,
   onRollback,
   onCreateGame,
-  onSignOut,
 }: GameScreenProps) {
   const isActive = game.status === 'active'
   const isMyTurn = isActive && game.turnPlayerId === playerId
@@ -86,21 +84,6 @@ export function GameScreen({
           <small>Нет связи — пока только смотрим</small>
         </div>
       )}
-
-      <header className="game-header">
-        <div>
-          <p className="eyebrow">Балда · партия {game.id.slice(-5)}</p>
-          <h1>{game.status === 'active' ? 'Собери слово' : 'Партия окончена'}</h1>
-        </div>
-        <button
-          className="text-button"
-          type="button"
-          disabled={pending}
-          onClick={onSignOut}
-        >
-          Выйти
-        </button>
-      </header>
 
       <section className="scoreboard" aria-label="Счёт игроков">
         {game.playerIds.map((scorePlayerId) => {

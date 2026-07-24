@@ -99,7 +99,6 @@ button:disabled {
 }
 
 .state-card h1,
-.game-header h1,
 .letter-keyboard h2 {
   margin: 0;
   letter-spacing: -0.04em;
@@ -270,18 +269,6 @@ button:disabled {
     max(14px, env(safe-area-inset-right))
     max(28px, env(safe-area-inset-bottom))
     max(14px, env(safe-area-inset-left));
-}
-
-.game-header {
-  display: flex;
-  margin: 4px 2px 20px;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.game-header h1 {
-  font-size: clamp(2rem, 9vw, 3.4rem);
 }
 
 .scoreboard {
