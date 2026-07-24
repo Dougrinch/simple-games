@@ -106,7 +106,7 @@ npx firebase database:instances:list --project <FIREBASE_PROJECT_ID>
 npx firebase database:set / firebase-data/seed.json \
   --project <FIREBASE_PROJECT_ID> \
   --instance <DATABASE_INSTANCE_NAME> \
-  --confirm
+  --force
 ```
 
 Команда заменяет данные в корне базы. Для уже используемой базы сначала
