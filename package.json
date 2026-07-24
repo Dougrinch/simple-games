@@ -19,8 +19,9 @@
     "test:rules": "firebase emulators:exec --only database --project demo-simple-games \"vitest run --config vitest.rules.config.ts\"",
     "emulators": "firebase emulators:start --only auth,database --project demo-simple-games",
     "emulators:seed": "node scripts/seed-emulator.mjs",
+    "seed:validate": "node scripts/seed-emulator.mjs --validate-only",
     "env:check": "node scripts/check-env.mjs production",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:rules && npm run env:check && vite build"
+    "check": "npm run lint && npm run typecheck && npm run seed:validate && npm run test && npm run test:rules && npm run env:check && vite build"
   },
   "dependencies": {
     "firebase": "12.16.0",

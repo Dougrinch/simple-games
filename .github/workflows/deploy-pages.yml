@@ -53,6 +53,9 @@ jobs:
       - name: Check types
         run: npm run typecheck
 
+      - name: Validate starting-word seed
+        run: npm run seed:validate
+
       - name: Run unit and component tests
         run: npm test
 

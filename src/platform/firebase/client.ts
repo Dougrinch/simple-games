@@ -28,7 +28,9 @@ const REQUIRED_FIREBASE_ENV = {
 function getFirebaseOptions(): FirebaseOptions {
   return Object.fromEntries(
     Object.entries(REQUIRED_FIREBASE_ENV).map(([option, envName]) => {
-      const value = import.meta.env[envName].trim()
+      const configuredValue: unknown = import.meta.env[envName]
+      const value =
+        typeof configuredValue === 'string' ? configuredValue.trim() : ''
 
       if (!value) {
         throw new Error(`Required environment variable ${envName} is not set.`)

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 
 const seedUrl = new URL('../firebase-data/seed.json', import.meta.url)
 const seed = JSON.parse(await readFile(seedUrl, 'utf8'))
+const validateOnly = process.argv.includes('--validate-only')
 const startWords = seed?.dictionaries?.balda?.startWords
 const items = startWords?.items
 const words = items ? Object.values(items) : []
@@ -32,6 +33,17 @@ const invalidWords = words.filter(
 
 if (invalidWords.length > 0) {
   throw new Error(`Invalid starting words: ${invalidWords.join(', ')}`)
+}
+
+if (seed?.meta?.schemaVersion !== 1) {
+  throw new Error('The seed schemaVersion must be 1.')
+}
+
+if (validateOnly) {
+  console.log(
+    `Validated schemaVersion and ${words.length} unique starting words.`,
+  )
+  process.exit(0)
 }
 
 const emulatorHost =

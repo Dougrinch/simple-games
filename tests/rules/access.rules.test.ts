@@ -8,6 +8,7 @@ import { readFile } from 'node:fs/promises'
 import {
   get,
   ref,
+  remove,
   set,
 } from 'firebase/database'
 import {
@@ -19,11 +20,36 @@ import {
 } from 'vitest'
 
 const PROJECT_ID = 'demo-simple-games'
-const ALLOWED_EMAIL = 'grinch131@gmail.com'
-const OTHER_ALLOWED_EMAIL = 'hinhillaa@gmail.com'
+const ALLOWED_EMAILS = [
+  'grinch131@gmail.com',
+  'hinhillaa@gmail.com',
+] as const
 const DENIED_EMAIL = 'stranger@example.com'
 
 let testEnvironment: RulesTestEnvironment
+
+async function seedDatabase() {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database()), {
+      meta: { schemaVersion: 1 },
+      dictionaries: {
+        balda: {
+          startWords: {
+            count: 100,
+            items: { 0: 'БЕРЕГ' },
+          },
+        },
+      },
+      gameTypes: {
+        balda: {
+          games: {
+            existing: { status: 'completed' },
+          },
+        },
+      },
+    })
+  })
+}
 
 beforeAll(async () => {
   const rules = await readFile(
@@ -36,109 +62,67 @@ beforeAll(async () => {
     database: { rules },
   })
 
-  await testEnvironment.withSecurityRulesDisabled(async (context) => {
-    await set(ref(context.database()), {
-      meta: { schemaVersion: 1 },
-      dictionaries: {
-        balda: {
-          startWords: {
-            count: 100,
-            items: { 0: 'БЕРЕГ' },
-          },
-        },
-      },
-      gameTypes: {
-        balda: {},
-      },
-    })
-  })
+  await seedDatabase()
 })
 
 afterEach(async () => {
   await testEnvironment.clearDatabase()
-  await testEnvironment.withSecurityRulesDisabled(async (context) => {
-    await set(ref(context.database()), {
-      meta: { schemaVersion: 1 },
-      dictionaries: {
-        balda: {
-          startWords: {
-            count: 100,
-            items: { 0: 'БЕРЕГ' },
-          },
-        },
-      },
-      gameTypes: {
-        balda: {},
-      },
-    })
-  })
+  await seedDatabase()
 })
 
 afterAll(async () => {
   await testEnvironment.cleanup()
 })
 
-function allowedDatabase(email = ALLOWED_EMAIL, uid = 'uid-grinch') {
+function allowedDatabase(email: string, uid = `uid-${email}`) {
   return testEnvironment.authenticatedContext(uid, { email }).database()
 }
 
-describe('Realtime Database access baseline', () => {
-  it('denies protected reads to unauthenticated users', async () => {
+describe('trusted-player Realtime Database boundary', () => {
+  it('denies every read and write to unauthenticated users', async () => {
     const database = testEnvironment.unauthenticatedContext().database()
 
     await assertFails(get(ref(database, 'meta/schemaVersion')))
+    await assertFails(set(ref(database, 'profiles/anonymous'), { value: true }))
   })
 
-  it.each([ALLOWED_EMAIL, OTHER_ALLOWED_EMAIL])(
-    'allows protected reads to %s',
+  it('denies every read and write to another authenticated email', async () => {
+    const database = allowedDatabase(DENIED_EMAIL)
+
+    await assertFails(get(ref(database, 'dictionaries/balda/startWords/count')))
+    await assertFails(
+      set(ref(database, 'gameTypes/balda/currentGameId'), 'forbidden-game'),
+    )
+  })
+
+  it('compares allowed emails exactly as lowercase rule values', async () => {
+    const database = allowedDatabase('Grinch131@gmail.com')
+
+    await assertFails(get(ref(database, 'meta/schemaVersion')))
+    await assertFails(set(ref(database, 'anything'), true))
+  })
+
+  it.each(ALLOWED_EMAILS)(
+    'allows %s to read and write any database area',
     async (email) => {
-      await assertSucceeds(get(ref(allowedDatabase(email), 'meta/schemaVersion')))
+      const database = allowedDatabase(email)
+
+      await assertSucceeds(get(ref(database, 'meta/schemaVersion')))
       await assertSucceeds(
-        get(ref(allowedDatabase(email), 'dictionaries/balda/startWords/count')),
+        set(ref(database, 'dictionaries/balda/startWords/items/0'), 'КНИГА'),
       )
+      await assertSucceeds(
+        set(ref(database, 'profiles/another-player'), {
+          arbitrary: 'value',
+        }),
+      )
+      await assertSucceeds(
+        set(ref(database, 'gameTypes/balda/currentGameId'), 'game-1'),
+      )
+      await assertSucceeds(
+        set(ref(database, 'unknownNamespace/anything'), true),
+      )
+      await assertSucceeds(remove(ref(database, 'gameTypes/balda/games/existing')))
     },
   )
-
-  it('denies protected reads to an unlisted authenticated user', async () => {
-    await assertFails(
-      get(ref(allowedDatabase(DENIED_EMAIL, 'uid-stranger'), 'meta/schemaVersion')),
-    )
-  })
-
-  it('prevents every client from changing the dictionary', async () => {
-    await assertFails(
-      set(
-        ref(allowedDatabase(), 'dictionaries/balda/startWords/items/0'),
-        'КНИГА',
-      ),
-    )
-  })
-
-  it('allows a user to write only a valid matching profile', async () => {
-    await assertSucceeds(
-      set(ref(allowedDatabase(), 'profiles/grinch131'), {
-        playerId: 'grinch131',
-        uid: 'uid-grinch',
-        email: ALLOWED_EMAIL,
-        displayName: 'Grinch',
-        photoURL: 'https://example.com/avatar.png',
-        lastSeenAt: 1,
-      }),
-    )
-
-    await assertFails(
-      set(ref(allowedDatabase(), 'profiles/hinhillaa'), {
-        playerId: 'hinhillaa',
-        uid: 'uid-grinch',
-        email: ALLOWED_EMAIL,
-        lastSeenAt: 1,
-      }),
-    )
-  })
-
-  it('denies game writes until transactional rules are implemented', async () => {
-    await assertFails(
-      set(ref(allowedDatabase(), 'gameTypes/balda/currentGameId'), 'game-1'),
-    )
-  })
 })
