@@ -13,25 +13,33 @@
 2. Добавьте Web App с именем `simple-games`. Firebase Hosting включать не нужно:
    статическое приложение публикуется через GitHub Pages.
 3. В `Project settings → General → Your apps → SDK setup and configuration`
-   скопируйте значения объекта `firebaseConfig`.
+   скопируйте значения объекта `firebaseConfig`. Поля `databaseURL` на этом
+   этапе может не быть: оно относится к Realtime Database, которую нужно создать
+   отдельно по инструкции ниже.
 4. Создайте локальный `.env.local` на основе `.env.example` и сопоставьте поля:
 
-| Firebase config | Переменная |
+| Значение Firebase | Переменная |
 |---|---|
 | `apiKey` | `VITE_FIREBASE_API_KEY` |
 | `authDomain` | `VITE_FIREBASE_AUTH_DOMAIN` |
-| `databaseURL` | `VITE_FIREBASE_DATABASE_URL` |
+| URL из `Build → Realtime Database` | `VITE_FIREBASE_DATABASE_URL` |
 | `projectId` | `VITE_FIREBASE_PROJECT_ID` |
 | `storageBucket` | `VITE_FIREBASE_STORAGE_BUCKET` |
 | `messagingSenderId` | `VITE_FIREBASE_MESSAGING_SENDER_ID` |
 | `appId` | `VITE_FIREBASE_APP_ID` |
 
-Для production также установите:
+Для локального запуска с настоящим Firebase, без эмуляторов, в `.env.local`
+оставьте:
 
 ```dotenv
-VITE_BASE_PATH=/simple-games/
+VITE_BASE_PATH=/
 VITE_USE_FIREBASE_EMULATORS=false
 ```
+
+Для публикации через GitHub Pages значение `VITE_BASE_PATH=/simple-games/`
+добавляется отдельно как Repository Variable по инструкции в разделе GitHub
+ниже. `VITE_USE_FIREBASE_EMULATORS=false` уже задано в workflow, поэтому
+создавать для него Repository Variable не нужно.
 
 Firebase Web API key и остальные поля Web App видны в клиентском bundle и не
 являются серверными секретами. Защиту обеспечивает Authentication вместе с
@@ -42,7 +50,7 @@ Security Rules. JSON-ключ сервисного аккаунта этому �
 1. Откройте `Build → Authentication → Get started`.
 2. В `Sign-in method` включите провайдер Google.
 3. Выберите email поддержки проекта и сохраните настройку.
-4. В `Authentication → Settings → Authorized domains` должны быть:
+4. Убедитесь, что в `Authentication → Settings → Authorized domains` есть:
    - `localhost`;
    - `dougrinch.github.io`.
 
@@ -55,7 +63,10 @@ Security Rules. JSON-ключ сервисного аккаунта этому �
 2. До создания выберите регион с учётом того, что перенести готовую базу в другой
    регион нельзя.
 3. Выберите locked mode, не test mode.
-4. Скопируйте точный URL базы в `VITE_FIREBASE_DATABASE_URL`.
+4. На вкладке `Data` скопируйте URL из верхней части страницы (например,
+   `https://<PROJECT_ID>-default-rtdb.firebaseio.com`) в
+   `VITE_FIREBASE_DATABASE_URL`. После создания базы этот URL также может
+   появиться как `databaseURL` в объекте `firebaseConfig`.
 
 ### Войти через локальный Firebase CLI
 
