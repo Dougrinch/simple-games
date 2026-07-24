@@ -61,14 +61,10 @@ export function GameBoard({
     }
 
     if (!nextCell) {
-      gesture.invalidMessage = 'Путь вышел за границу поля.'
-      boardElement.dataset.gestureError = gesture.invalidMessage
-      const status = boardElement.parentElement?.querySelector<HTMLElement>(
-        '[data-gesture-status]',
-      )
-      if (status) {
-        status.textContent = `Ошибка: ${gesture.invalidMessage}`
-      }
+      return
+    }
+
+    if (!game.board[nextCell] && draft?.cell !== nextCell) {
       return
     }
 
@@ -81,8 +77,6 @@ export function GameBoard({
       gesture.invalidMessage = 'Нельзя заходить в одну клетку дважды.'
     } else if (lastCell && !isAdjacent(lastCell, nextCell)) {
       gesture.invalidMessage = 'Буквы должны стоять рядом по стороне.'
-    } else if (!game.board[nextCell] && draft?.cell !== nextCell) {
-      gesture.invalidMessage = 'Путь проходит через пустую клетку.'
     } else {
       gesture.path.push(nextCell)
     }
@@ -174,14 +168,8 @@ export function GameBoard({
           }
 
           event.preventDefault()
-          const bounds = event.currentTarget.getBoundingClientRect()
-          const outside =
-            event.clientX < bounds.left ||
-            event.clientX > bounds.right ||
-            event.clientY < bounds.top ||
-            event.clientY > bounds.bottom
           updatePath(
-            outside ? null : cellFromPoint(event.clientX, event.clientY),
+            cellFromPoint(event.clientX, event.clientY),
             event.currentTarget,
           )
         }}

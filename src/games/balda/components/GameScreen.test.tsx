@@ -457,4 +457,72 @@ describe('GameBoard pointer path', () => {
     )
     Reflect.deleteProperty(document, 'elementFromPoint')
   })
+
+  it('ignores gaps and empty cells until the pointer reaches a letter', () => {
+    const onPathComplete = vi.fn()
+    render(
+      <GameBoard
+        game={game()}
+        draft={{ cell: '1_0', letter: 'А' }}
+        disabled={false}
+        onCellPress={vi.fn()}
+        onPathComplete={onPathComplete}
+      />,
+    )
+
+    const board = screen.getByRole('grid', { name: 'Игровое поле 5 на 5' })
+    const draftCell = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А, черновик',
+    })
+    const emptyCell = screen.getByRole('gridcell', {
+      name: 'Пустая клетка 1, 1',
+    })
+    const nextLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 2, 0, буква Б',
+    })
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi
+        .fn()
+        .mockReturnValueOnce(board)
+        .mockReturnValueOnce(emptyCell)
+        .mockReturnValue(nextLetter),
+    })
+
+    fireEvent.pointerDown(draftCell, {
+      pointerId: 11,
+      clientX: 20,
+      clientY: 80,
+    })
+    fireEvent.pointerMove(board, {
+      pointerId: 11,
+      clientX: 60,
+      clientY: 80,
+    })
+    fireEvent.pointerMove(board, {
+      pointerId: 11,
+      clientX: 90,
+      clientY: 80,
+    })
+
+    expect(screen.queryByText(/^Ошибка:/u)).not.toBeInTheDocument()
+    expect(board).toHaveAttribute('data-path', '1_0')
+
+    fireEvent.pointerMove(board, {
+      pointerId: 11,
+      clientX: 50,
+      clientY: 150,
+    })
+    fireEvent.pointerUp(board, {
+      pointerId: 11,
+      clientX: 50,
+      clientY: 150,
+    })
+
+    expect(onPathComplete).toHaveBeenCalledWith(
+      ['1_0', '2_0'] satisfies CellKey[],
+      null,
+    )
+    Reflect.deleteProperty(document, 'elementFromPoint')
+  })
 })
