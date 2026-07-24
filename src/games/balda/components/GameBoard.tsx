@@ -113,16 +113,7 @@ export function GameBoard({
       gesture.path.push(nextCell)
     }
 
-    boardElement.dataset.gestureError = gesture.invalidMessage ?? ''
     boardElement.dataset.path = gesture.path.join(',')
-    const status = boardElement.parentElement?.querySelector<HTMLElement>(
-      '[data-gesture-status]',
-    )
-    if (status) {
-      status.textContent = gesture.invalidMessage
-        ? `Ошибка: ${gesture.invalidMessage}`
-        : `Выбрано клеток: ${gesture.path.length}`
-    }
     for (const cellElement of boardElement.querySelectorAll<HTMLElement>(
       '[data-cell-key]',
     )) {
@@ -146,16 +137,7 @@ export function GameBoard({
 
   const clearGesturePresentation = (boardElement: HTMLDivElement) => {
     boardElement.classList.remove('is-gesturing')
-    boardElement.dataset.gestureError = ''
     boardElement.dataset.path = ''
-    const status = boardElement.parentElement?.querySelector<HTMLElement>(
-      '[data-gesture-status]',
-    )
-    if (status) {
-      status.textContent = draft
-        ? 'Проведи одним движением через буквы слова'
-        : 'Нажми на свободную клетку рядом с буквой'
-    }
     for (const cellElement of boardElement.querySelectorAll<HTMLElement>(
       '[data-cell-key]',
     )) {
@@ -171,7 +153,6 @@ export function GameBoard({
         className="game-board"
         role="grid"
         aria-label="Игровое поле 5 на 5"
-        data-gesture-error=""
         onPointerDown={(event) => {
           if (disabled || !draft || gestureRef.current) {
             return
@@ -326,11 +307,6 @@ export function GameBoard({
           )
         })}
       </div>
-      <p className="gesture-hint" data-gesture-status aria-live="assertive">
-        {draft
-          ? 'Проведи одним движением через буквы слова'
-          : 'Нажми на свободную клетку рядом с буквой'}
-      </p>
     </div>
   )
 }

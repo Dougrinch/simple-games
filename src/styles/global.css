@@ -598,14 +598,6 @@ button:disabled {
   --arrow-glow: rgb(255 141 126 / 28%);
 }
 
-.gesture-hint {
-  min-height: 21px;
-  margin: 10px 4px 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-align: center;
-}
-
 .draft-actions {
   display: flex;
   min-height: 62px;

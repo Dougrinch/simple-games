@@ -496,7 +496,8 @@ describe('GameBoard pointer path', () => {
 
     fireEvent.pointerDown(draftCell, { pointerId: 9, clientX: 20, clientY: 80 })
     fireEvent.pointerMove(board, { pointerId: 9, clientX: 150, clientY: 150 })
-    expect(screen.getByText(/Ошибка: Буквы должны/u)).toBeInTheDocument()
+    expect(draftCell).toHaveClass('is-path-invalid')
+    expect(screen.queryByText(/Ошибка: Буквы должны/u)).not.toBeInTheDocument()
     fireEvent.pointerUp(board, { pointerId: 9, clientX: 150, clientY: 150 })
 
     expect(onPathComplete).toHaveBeenCalledWith(
