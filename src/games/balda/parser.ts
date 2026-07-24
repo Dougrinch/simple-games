@@ -30,6 +30,7 @@ const GAME_FIELDS = new Set([
   'usedWords',
   'moveCount',
   'moves',
+  'rollbackTargetMoveNumber',
   'lastWord',
   'result',
 ])
@@ -439,9 +440,31 @@ export function parseBaldaGame(value: unknown): BaldaGame {
 
   const moveCount = integer(input.moveCount, 'moveCount')
   const moves = parseMoves(input.moves)
+  const revision = integer(input.revision, 'revision')
 
   if (Object.keys(moves ?? {}).length !== moveCount) {
     throw new GameDataError('Move count does not match moves.')
+  }
+
+  const rollbackTargetMoveNumber =
+    input.rollbackTargetMoveNumber === undefined ||
+    input.rollbackTargetMoveNumber === null
+      ? revision === moveCount && moveCount > 0
+        ? moveCount
+        : null
+      : integer(
+          input.rollbackTargetMoveNumber,
+          'rollbackTargetMoveNumber',
+          1,
+        )
+
+  if (
+    rollbackTargetMoveNumber !== null &&
+    rollbackTargetMoveNumber !== moveCount
+  ) {
+    throw new GameDataError(
+      'Rollback target does not match the last accepted move.',
+    )
   }
 
   const game: BaldaGame = {
@@ -451,7 +474,7 @@ export function parseBaldaGame(value: unknown): BaldaGame {
     status: input.status,
     createdAt: timestamp(input.createdAt, 'createdAt'),
     completedAt: null,
-    revision: integer(input.revision, 'revision'),
+    revision,
     playerIds: ['grinch131', 'hinhillaa'],
     turnPlayerId: null,
     startWord: input.startWord,
@@ -460,6 +483,7 @@ export function parseBaldaGame(value: unknown): BaldaGame {
     usedWords: parseUsedWords(input.usedWords),
     moveCount,
     moves,
+    rollbackTargetMoveNumber,
     lastWord: input.lastWord,
     result: null,
   }

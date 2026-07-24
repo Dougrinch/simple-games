@@ -334,6 +334,7 @@ export function createInitialGame(
     usedWords: { [startWord]: true },
     moveCount: 0,
     moves: null,
+    rollbackTargetMoveNumber: null,
     lastWord: startWord,
     result: null,
   }
@@ -381,6 +382,7 @@ export function applyMove(
     usedWords: { ...game.usedWords, [validation.value.word]: true },
     moves: { ...game.moves, [String(moveNumber)]: move },
     moveCount: moveNumber,
+    rollbackTargetMoveNumber: moveNumber,
     lastWord: validation.value.word,
     revision: game.revision + 1,
     turnPlayerId: otherPlayer(playerId),
@@ -416,7 +418,8 @@ export function canRollbackLastMove(
   }
 
   return (
-    lastMove.authorPlayerId === playerId || game.turnPlayerId === playerId
+    game.rollbackTargetMoveNumber === lastMove.number &&
+    (lastMove.authorPlayerId === playerId || game.turnPlayerId === playerId)
   )
 }
 
@@ -440,6 +443,10 @@ export function rollbackLastMove(
     lastMove.number !== request.expectedMoveNumber ||
     lastMove.authorPlayerId !== request.expectedAuthorPlayerId
   ) {
+    return failure('rollback-unavailable')
+  }
+
+  if (game.rollbackTargetMoveNumber !== lastMove.number) {
     return failure('rollback-unavailable')
   }
 
@@ -470,6 +477,7 @@ export function rollbackLastMove(
       usedWords,
       moves: Object.keys(moves).length > 0 ? moves : null,
       moveCount: game.moveCount - 1,
+      rollbackTargetMoveNumber: null,
       lastWord: previousMove?.word ?? game.startWord,
       turnPlayerId: lastMove.authorPlayerId,
       revision: game.revision + 1,

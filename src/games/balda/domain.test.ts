@@ -122,6 +122,7 @@ describe('game transitions', () => {
     expect(result.value.moves?.['1']?.word).toBe('АБЕ')
     expect(result.value.turnPlayerId).toBe('hinhillaa')
     expect(result.value.moveCount).toBe(1)
+    expect(result.value.rollbackTargetMoveNumber).toBe(1)
     expect(result.value.revision).toBe(1)
     expect(result.value.lastWord).toBe('АБЕ')
   })
@@ -182,8 +183,37 @@ describe('game transitions', () => {
     expect(rolledBack.value.scores.hinhillaa).toBe(0)
     expect(rolledBack.value.turnPlayerId).toBe('hinhillaa')
     expect(rolledBack.value.moveCount).toBe(1)
+    expect(rolledBack.value.rollbackTargetMoveNumber).toBeNull()
     expect(rolledBack.value.revision).toBe(3)
     expect(rolledBack.value.lastWord).toBe('АБЕ')
+
+    expect(canRollbackLastMove(rolledBack.value, 'grinch131')).toBe(false)
+    expect(canRollbackLastMove(rolledBack.value, 'hinhillaa')).toBe(false)
+    expect(
+      rollbackLastMove(rolledBack.value, 'hinhillaa', {
+        expectedRevision: 3,
+        expectedMoveNumber: 1,
+        expectedAuthorPlayerId: 'grinch131',
+      }),
+    ).toMatchObject({ ok: false, code: 'rollback-unavailable' })
+
+    const replacement = applyMove(
+      rolledBack.value,
+      'hinhillaa',
+      {
+        expectedRevision: 3,
+        cell: '1_1',
+        letter: 'И',
+        path: ['1_1', '1_0', '2_0'],
+      },
+      400,
+    )
+    expect(replacement.ok).toBe(true)
+    if (!replacement.ok) {
+      return
+    }
+    expect(replacement.value.rollbackTargetMoveNumber).toBe(2)
+    expect(canRollbackLastMove(replacement.value, 'grinch131')).toBe(true)
   })
 
   it('detects a full board, winner and draw', () => {

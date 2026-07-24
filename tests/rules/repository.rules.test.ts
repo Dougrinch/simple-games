@@ -359,7 +359,33 @@ describe('BaldaRepository transactions', () => {
         kind: 'conflict',
         domainFailure: { code: 'rollback-unavailable' },
       })
-      expect((await readCurrentGame(databaseFor('grinch131'))).moveCount).toBe(2)
+
+      const rolledBack = await connection.repository.rollbackLastMove(
+        created.id,
+        firstAuthor,
+        {
+          expectedRevision: secondMove.revision,
+          expectedMoveNumber: 2,
+          expectedAuthorPlayerId: secondAuthor,
+        },
+      )
+      expect(rolledBack.moveCount).toBe(1)
+
+      await expect(
+        connection.repository.rollbackLastMove(
+          created.id,
+          secondAuthor,
+          {
+            expectedRevision: rolledBack.revision,
+            expectedMoveNumber: 1,
+            expectedAuthorPlayerId: firstAuthor,
+          },
+        ),
+      ).rejects.toMatchObject({
+        kind: 'conflict',
+        domainFailure: { code: 'rollback-unavailable' },
+      })
+      expect((await readCurrentGame(databaseFor('grinch131'))).moveCount).toBe(1)
     } finally {
       connection.unsubscribe()
     }

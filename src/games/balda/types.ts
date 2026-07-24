@@ -52,6 +52,7 @@ export interface BaldaGame {
   usedWords: Record<string, true>
   moveCount: number
   moves: Record<string, BaldaMove> | null
+  rollbackTargetMoveNumber: number | null
   lastWord: string
   result: GameResult | null
 }

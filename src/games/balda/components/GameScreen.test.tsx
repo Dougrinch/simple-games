@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { applyMove, createInitialGame } from '../domain'
+import { applyMove, createInitialGame, rollbackLastMove } from '../domain'
 import {
   completeNearlyCompletedGame,
   makeNearlyCompletedGame,
@@ -47,6 +47,19 @@ function twiceMovedGame() {
     },
     3,
   )
+  if (!result.ok) {
+    throw new Error(result.message)
+  }
+  return result.value
+}
+
+function rolledBackGame() {
+  const twiceMoved = twiceMovedGame()
+  const result = rollbackLastMove(twiceMoved, 'grinch131', {
+    expectedRevision: twiceMoved.revision,
+    expectedMoveNumber: 2,
+    expectedAuthorPlayerId: 'hinhillaa',
+  })
   if (!result.ok) {
     throw new Error(result.message)
   }
@@ -260,6 +273,41 @@ describe('GameScreen', () => {
     expect(columns[1]).toHaveTextContent('Хинхилла')
     expect(columns[1]).toHaveTextContent('РЕР')
     expect(columns[1]).not.toHaveTextContent('АБЕ')
+  })
+
+  it('does not offer a second consecutive rollback', () => {
+    const rolledBack = rolledBackGame()
+    const { rerender } = render(
+      <GameScreen
+        {...gameScreenProps({
+          game: rolledBack,
+          playerId: 'grinch131',
+        })}
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', { name: 'Ой, шучушучу' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ненене, так нельзя' }),
+    ).not.toBeInTheDocument()
+
+    rerender(
+      <GameScreen
+        {...gameScreenProps({
+          game: rolledBack,
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', { name: 'Ой, шучушучу' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ненене, так нельзя' }),
+    ).not.toBeInTheDocument()
   })
 
   it('ignores board actions while pending or when a cell is unavailable', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createInitialGame } from './domain'
+import { applyMove, createInitialGame, rollbackLastMove } from './domain'
 import { GameDataError, parseBaldaGame } from './parser'
 import {
   completeNearlyCompletedGame,
@@ -47,6 +47,62 @@ describe('parseBaldaGame', () => {
     expect(parsed.status).toBe('completed')
     expect(parsed.result?.isDraw).toBe(true)
     expect(parsed.result?.winnerPlayerId).toBeNull()
+  })
+
+  it('keeps legacy games safe when the rollback marker is absent', () => {
+    const first = applyMove(
+      createInitialGame('game-1', 'БЕРЕГ', 'grinch131', 1),
+      'grinch131',
+      {
+        expectedRevision: 0,
+        cell: '1_0',
+        letter: 'А',
+        path: ['1_0', '2_0', '2_1'],
+      },
+      2,
+    )
+    if (!first.ok) {
+      throw new Error(first.message)
+    }
+    const second = applyMove(
+      first.value,
+      'hinhillaa',
+      {
+        expectedRevision: 1,
+        cell: '1_1',
+        letter: 'О',
+        path: ['1_1', '1_0', '2_0'],
+      },
+      3,
+    )
+    if (!second.ok) {
+      throw new Error(second.message)
+    }
+    const rollback = rollbackLastMove(second.value, 'grinch131', {
+      expectedRevision: 2,
+      expectedMoveNumber: 2,
+      expectedAuthorPlayerId: 'hinhillaa',
+    })
+    if (!rollback.ok) {
+      throw new Error(rollback.message)
+    }
+
+    const ordinaryLegacyGame = structuredClone(first.value) as unknown as Record<
+      string,
+      unknown
+    >
+    delete ordinaryLegacyGame.rollbackTargetMoveNumber
+    const rolledBackLegacyGame = structuredClone(
+      rollback.value,
+    ) as unknown as Record<string, unknown>
+    delete rolledBackLegacyGame.rollbackTargetMoveNumber
+
+    expect(
+      parseBaldaGame(ordinaryLegacyGame).rollbackTargetMoveNumber,
+    ).toBe(1)
+    expect(
+      parseBaldaGame(rolledBackLegacyGame).rollbackTargetMoveNumber,
+    ).toBeNull()
   })
 
   it('rejects an unsupported schema and inconsistent stored state', () => {
