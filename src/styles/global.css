@@ -77,6 +77,18 @@ input {
   line-height: 1.6;
 }
 
+.setup-connection {
+  padding: 16px 18px;
+  border: 1px solid rgb(247 203 98 / 32%);
+  border-radius: 16px;
+  background: rgb(247 203 98 / 8%);
+}
+
+.setup-connection strong {
+  color: #f7cb62;
+  font-size: 1.2em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

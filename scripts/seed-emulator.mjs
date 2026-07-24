@@ -36,8 +36,10 @@ if (invalidWords.length > 0) {
 
 const emulatorHost =
   process.env.FIREBASE_DATABASE_EMULATOR_HOST || '127.0.0.1:9000'
-const projectId = process.env.GCLOUD_PROJECT || 'demo-simple-games'
-const endpoint = `http://${emulatorHost}/.json?ns=${encodeURIComponent(projectId)}`
+const databaseNamespace =
+  process.env.FIREBASE_DATABASE_NAMESPACE ||
+  'demo-simple-games-default-rtdb'
+const endpoint = `http://${emulatorHost}/.json?ns=${encodeURIComponent(databaseNamespace)}`
 const response = await fetch(endpoint, {
   method: 'PUT',
   headers: {
@@ -55,5 +57,5 @@ if (!response.ok) {
 }
 
 console.log(
-  `Imported schemaVersion and ${words.length} starting words into the ${projectId} emulator.`,
+  `Imported schemaVersion and ${words.length} starting words into the ${databaseNamespace} emulator namespace.`,
 )
