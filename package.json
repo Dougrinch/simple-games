@@ -1,0 +1,53 @@
+{
+  "name": "simple-games",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run env:check && npm run typecheck && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint src tests scripts vite.config.ts vitest.rules.config.ts",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:rules": "firebase emulators:exec --only database --project demo-simple-games \"vitest run --config vitest.rules.config.ts\"",
+    "emulators": "firebase emulators:start --only auth,database --project demo-simple-games",
+    "emulators:seed": "node scripts/seed-emulator.mjs",
+    "env:check": "node scripts/check-env.mjs production",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:rules && npm run env:check && vite build"
+  },
+  "dependencies": {
+    "firebase": "12.16.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.1",
+    "@testing-library/jest-dom": "7.0.0",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "@vitest/coverage-v8": "4.1.10",
+    "firebase-tools": "15.24.0",
+    "jsdom": "29.1.1",
+    "oxlint": "1.75.0",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.1": true,
+    "fsevents@2.3.3": true,
+    "protobufjs@7.6.5": true,
+    "re2@1.26.1": true
+  }
+}

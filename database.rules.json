@@ -1,0 +1,61 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "meta": {
+      "schemaVersion": {
+        ".read": "auth != null && auth.token.email != null && (auth.token.email === 'grinch131@gmail.com' || auth.token.email === 'hinhillaa@gmail.com')",
+        ".write": false
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "dictionaries": {
+      ".read": "auth != null && auth.token.email != null && (auth.token.email === 'grinch131@gmail.com' || auth.token.email === 'hinhillaa@gmail.com')",
+      ".write": false
+    },
+    "profiles": {
+      ".read": "auth != null && auth.token.email != null && (auth.token.email === 'grinch131@gmail.com' || auth.token.email === 'hinhillaa@gmail.com')",
+      "$playerId": {
+        ".write": "auth != null && auth.token.email != null && newData.exists() && (($playerId === 'grinch131' && auth.token.email === 'grinch131@gmail.com') || ($playerId === 'hinhillaa' && auth.token.email === 'hinhillaa@gmail.com'))",
+        ".validate": "newData.hasChildren(['playerId', 'uid', 'email', 'lastSeenAt'])",
+        "playerId": {
+          ".validate": "newData.isString() && newData.val() === $playerId"
+        },
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val() === auth.token.email"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "photoURL": {
+          ".validate": "newData.isString() && newData.val().length <= 2048"
+        },
+        "lastSeenAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "gameTypes": {
+      "balda": {
+        ".read": "auth != null && auth.token.email != null && (auth.token.email === 'grinch131@gmail.com' || auth.token.email === 'hinhillaa@gmail.com')",
+        ".write": false
+      },
+      "$other": {
+        ".read": false,
+        ".write": false
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
