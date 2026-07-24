@@ -67,6 +67,9 @@ export function GameScreen({
   const isActive = game.status === 'active'
   const isMyTurn = isActive && game.turnPlayerId === playerId
   const canAct = isActive && isMyTurn && online && synchronized && !pending
+  const moves = Object.values(game.moves ?? {}).sort(
+    (first, second) => first.number - second.number,
+  )
   const lastMove = game.moves?.[String(game.moveCount)]
   const showRollback =
     online &&
@@ -268,6 +271,35 @@ export function GameScreen({
         >
           Новая игра
         </button>
+      )}
+
+      {moves.length > 0 && (
+        <section className="move-history" aria-label="История ходов">
+          <div className="move-history-column">
+            <h2>{playerName(game.playerIds[0], profiles)}</h2>
+            <ol>
+              {moves
+                .filter(
+                  (move) => move.authorPlayerId === game.playerIds[0],
+                )
+                .map((move) => (
+                  <li key={move.number}>{move.word}</li>
+                ))}
+            </ol>
+          </div>
+          <div className="move-history-column">
+            <h2>{playerName(game.playerIds[1], profiles)}</h2>
+            <ol>
+              {moves
+                .filter(
+                  (move) => move.authorPlayerId === game.playerIds[1],
+                )
+                .map((move) => (
+                  <li key={move.number}>{move.word}</li>
+                ))}
+            </ol>
+          </div>
+        </section>
       )}
 
       <RussianKeyboard

@@ -34,6 +34,25 @@ function movedGame() {
   return result.value
 }
 
+function twiceMovedGame() {
+  const firstMove = movedGame()
+  const result = applyMove(
+    firstMove,
+    'hinhillaa',
+    {
+      expectedRevision: 1,
+      cell: '1_1',
+      letter: 'Р',
+      path: ['1_1', '2_1', '2_2'],
+    },
+    3,
+  )
+  if (!result.ok) {
+    throw new Error(result.message)
+  }
+  return result.value
+}
+
 function gameScreenProps(
   overrides: Partial<ComponentProps<typeof GameScreen>> = {},
 ): ComponentProps<typeof GameScreen> {
@@ -195,7 +214,7 @@ describe('GameScreen', () => {
     )
 
     expect(screen.getByText('Ход вражины')).toBeInTheDocument()
-    expect(screen.getByText('АБЕ')).toBeInTheDocument()
+    expect(document.querySelector('.game-status')).toHaveTextContent('АБЕ')
     expect(screen.getByLabelText('3 очков')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Ой, шучушучу' }),
@@ -210,6 +229,45 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'Ненене, так нельзя' }),
     ).toBeInTheDocument()
+  })
+
+  it('shows each player words in a separate move-history column', () => {
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: twiceMovedGame(),
+          profiles: {
+            grinch131: {
+              playerId: 'grinch131',
+              uid: 'grinch-uid',
+              email: 'grinch@example.com',
+              displayName: 'Гринч',
+              photoURL: null,
+              lastSeenAt: 1,
+            },
+            hinhillaa: {
+              playerId: 'hinhillaa',
+              uid: 'hinhillaa-uid',
+              email: 'hinhillaa@example.com',
+              displayName: 'Хинхилла',
+              photoURL: null,
+              lastSeenAt: 1,
+            },
+          },
+        })}
+      />,
+    )
+
+    const history = screen.getByRole('region', { name: 'История ходов' })
+    const columns = history.querySelectorAll('.move-history-column')
+
+    expect(columns).toHaveLength(2)
+    expect(columns[0]).toHaveTextContent('Гринч')
+    expect(columns[0]).toHaveTextContent('АБЕ')
+    expect(columns[0]).not.toHaveTextContent('РЕР')
+    expect(columns[1]).toHaveTextContent('Хинхилла')
+    expect(columns[1]).toHaveTextContent('РЕР')
+    expect(columns[1]).not.toHaveTextContent('АБЕ')
   })
 
   it('blocks board actions while pending and explains unavailable cells', async () => {

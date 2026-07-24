@@ -554,6 +554,48 @@ button:disabled {
   margin-top: 12px;
 }
 
+.move-history {
+  display: grid;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.move-history-column {
+  min-width: 0;
+  padding: 0 14px;
+}
+
+.move-history-column + .move-history-column {
+  border-left: 1px solid var(--line);
+}
+
+.move-history h2 {
+  overflow: hidden;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.move-history ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.move-history li {
+  overflow-wrap: anywhere;
+  padding: 6px 0;
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .offline-banner {
   display: flex;
   width: min(calc(100% - 24px), 420px);
