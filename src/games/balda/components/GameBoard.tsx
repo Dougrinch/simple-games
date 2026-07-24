@@ -303,8 +303,22 @@ export function GameBoard({
                 onCellPress(cellKey)
               }}
             >
-              <span className="last-path-ribbon" aria-hidden="true" />
-              <span className="gesture-path-ribbon" aria-hidden="true" />
+              <span
+                className="path-arrow path-arrow-out last-path-arrow"
+                aria-hidden="true"
+              />
+              <span
+                className="path-arrow path-arrow-in last-path-arrow"
+                aria-hidden="true"
+              />
+              <span
+                className="path-arrow path-arrow-out gesture-path-arrow"
+                aria-hidden="true"
+              />
+              <span
+                className="path-arrow path-arrow-in gesture-path-arrow"
+                aria-hidden="true"
+              />
               <span className="board-letter" aria-hidden="true">
                 {letter}
               </span>

@@ -455,88 +455,117 @@ button:disabled {
   z-index: 2;
 }
 
-.last-path-ribbon,
-.gesture-path-ribbon {
-  --ribbon-color: var(--green);
-  --ribbon-glow: rgb(113 217 154 / 22%);
-
-  border-radius: 50%;
-  display: none;
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  background: radial-gradient(
-    circle at center,
-    var(--ribbon-color) 0 5px,
-    var(--ribbon-glow) 6px 10px,
-    transparent 11px
+.path-arrow {
+  --arrow-color: var(--green);
+  --arrow-glow: rgb(113 217 154 / 22%);
+  --arrow-inset: clamp(7px, 2.2vw, 10px);
+  --arrow-stroke: 3px;
+  --arrow-half-length: calc(
+    var(--arrow-inset) + var(--board-gap) / 2 + 1px
   );
-  pointer-events: none;
-}
 
-.gesture-path-ribbon {
-  --ribbon-color: var(--gold);
-  --ribbon-glow: rgb(246 202 91 / 24%);
-}
-
-.board-cell.is-last-path .last-path-ribbon {
-  display: block;
-}
-
-.last-path-ribbon::before,
-.last-path-ribbon::after,
-.gesture-path-ribbon::before,
-.gesture-path-ribbon::after {
-  width: calc(50% + var(--board-gap) / 2 + 1px);
-  height: clamp(6px, 2.1vw, 9px);
-  border-radius: 999px;
+  display: none;
+  width: var(--arrow-half-length);
+  height: 12px;
   position: absolute;
-  top: 50%;
-  left: 50%;
-  background:
-    linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 26%),
-      transparent 45%
-    ),
-    var(--ribbon-color);
-  box-shadow: 0 0 8px var(--ribbon-glow);
-  content: "";
-  opacity: 0;
-  transform: translateY(-50%);
+  z-index: 3;
+  pointer-events: none;
   transform-origin: left center;
 }
 
-.board-cell[data-last-prev="up"] .last-path-ribbon::before,
-.board-cell[data-path-prev="up"] .gesture-path-ribbon::before,
-.board-cell[data-last-next="up"] .last-path-ribbon::after,
-.board-cell[data-path-next="up"] .gesture-path-ribbon::after {
-  opacity: 1;
+.gesture-path-arrow {
+  --arrow-color: var(--gold);
+  --arrow-glow: rgb(246 202 91 / 24%);
+}
+
+.path-arrow::before {
+  height: var(--arrow-stroke);
+  border-radius: 999px;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  background: var(--arrow-color);
+  box-shadow: 0 0 6px var(--arrow-glow);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.path-arrow-in::after {
+  width: 7px;
+  height: 7px;
+  border-top: var(--arrow-stroke) solid var(--arrow-color);
+  border-right: var(--arrow-stroke) solid var(--arrow-color);
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  filter: drop-shadow(0 0 3px var(--arrow-glow));
+  content: "";
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.board-cell[data-last-next="up"] .last-path-arrow.path-arrow-out,
+.board-cell[data-path-next="up"] .gesture-path-arrow.path-arrow-out {
+  display: block;
+  top: var(--arrow-inset);
+  left: 50%;
   transform: translateY(-50%) rotate(-90deg);
 }
 
-.board-cell[data-last-prev="right"] .last-path-ribbon::before,
-.board-cell[data-path-prev="right"] .gesture-path-ribbon::before,
-.board-cell[data-last-next="right"] .last-path-ribbon::after,
-.board-cell[data-path-next="right"] .gesture-path-ribbon::after {
-  opacity: 1;
+.board-cell[data-last-next="right"] .last-path-arrow.path-arrow-out,
+.board-cell[data-path-next="right"] .gesture-path-arrow.path-arrow-out {
+  display: block;
+  top: 50%;
+  left: calc(100% - var(--arrow-inset));
   transform: translateY(-50%) rotate(0deg);
 }
 
-.board-cell[data-last-prev="down"] .last-path-ribbon::before,
-.board-cell[data-path-prev="down"] .gesture-path-ribbon::before,
-.board-cell[data-last-next="down"] .last-path-ribbon::after,
-.board-cell[data-path-next="down"] .gesture-path-ribbon::after {
-  opacity: 1;
+.board-cell[data-last-next="down"] .last-path-arrow.path-arrow-out,
+.board-cell[data-path-next="down"] .gesture-path-arrow.path-arrow-out {
+  display: block;
+  top: calc(100% - var(--arrow-inset));
+  left: 50%;
   transform: translateY(-50%) rotate(90deg);
 }
 
-.board-cell[data-last-prev="left"] .last-path-ribbon::before,
-.board-cell[data-path-prev="left"] .gesture-path-ribbon::before,
-.board-cell[data-last-next="left"] .last-path-ribbon::after,
-.board-cell[data-path-next="left"] .gesture-path-ribbon::after {
-  opacity: 1;
+.board-cell[data-last-next="left"] .last-path-arrow.path-arrow-out,
+.board-cell[data-path-next="left"] .gesture-path-arrow.path-arrow-out {
+  display: block;
+  top: 50%;
+  left: var(--arrow-inset);
   transform: translateY(-50%) rotate(180deg);
+}
+
+.board-cell[data-last-prev="up"] .last-path-arrow.path-arrow-in,
+.board-cell[data-path-prev="up"] .gesture-path-arrow.path-arrow-in {
+  display: block;
+  top: calc(var(--board-gap) / -2 - 1px);
+  left: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.board-cell[data-last-prev="right"] .last-path-arrow.path-arrow-in,
+.board-cell[data-path-prev="right"] .gesture-path-arrow.path-arrow-in {
+  display: block;
+  top: 50%;
+  left: calc(100% + var(--board-gap) / 2 + 1px);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.board-cell[data-last-prev="down"] .last-path-arrow.path-arrow-in,
+.board-cell[data-path-prev="down"] .gesture-path-arrow.path-arrow-in {
+  display: block;
+  top: calc(100% + var(--board-gap) / 2 + 1px);
+  left: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.board-cell[data-last-prev="left"] .last-path-arrow.path-arrow-in,
+.board-cell[data-path-prev="left"] .gesture-path-arrow.path-arrow-in {
+  display: block;
+  top: 50%;
+  left: calc(var(--board-gap) / -2 - 1px);
+  transform: translateY(-50%) rotate(0deg);
 }
 
 .board-cell.is-last-letter::after {
@@ -553,15 +582,10 @@ button:disabled {
   z-index: 2;
   border-color: var(--gold);
   background: #4b4528;
-  transform: scale(0.96);
 }
 
-.board-cell.is-in-path .last-path-ribbon {
+.board-cell.is-in-path .last-path-arrow {
   display: none;
-}
-
-.board-cell.is-in-path .gesture-path-ribbon {
-  display: block;
 }
 
 .board-cell.is-path-invalid {
@@ -569,9 +593,9 @@ button:disabled {
   background: #4a2925;
 }
 
-.board-cell.is-path-invalid .gesture-path-ribbon {
-  --ribbon-color: var(--red);
-  --ribbon-glow: rgb(255 141 126 / 28%);
+.board-cell.is-path-invalid .gesture-path-arrow {
+  --arrow-color: var(--red);
+  --arrow-glow: rgb(255 141 126 / 28%);
 }
 
 .gesture-hint {
