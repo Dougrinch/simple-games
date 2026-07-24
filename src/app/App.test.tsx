@@ -318,11 +318,11 @@ describe('App states and orchestration', () => {
 
     expect(screen.queryByText('Черновая буква')).not.toBeInTheDocument()
     expect(
-      screen.getByText('Поле изменилось. Выбери букву заново.'),
-    ).toBeInTheDocument()
+      screen.queryByText('Поле изменилось. Выбери букву заново.'),
+    ).not.toBeInTheDocument()
   })
 
-  it('shows the required message when rollback is no longer available', async () => {
+  it('resynchronizes silently when rollback is no longer available', async () => {
     const user = userEvent.setup()
     authMocks.session = {
       status: 'authorized',
@@ -362,10 +362,12 @@ describe('App states and orchestration', () => {
       screen.getByRole('button', { name: 'Ой, шучушучу' }),
     )
 
+    await vi.waitFor(() => {
+      expect(repositoryMocks.resync).toHaveBeenCalledOnce()
+    })
     expect(
-      await screen.findByText('Этот ход уже нельзя отменить'),
-    ).toBeInTheDocument()
-    expect(repositoryMocks.resync).toHaveBeenCalledOnce()
+      screen.queryByText('Этот ход уже нельзя отменить'),
+    ).not.toBeInTheDocument()
   })
 
   it('locks the confirmed view when an operation reports a lost connection', async () => {

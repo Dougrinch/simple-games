@@ -63,7 +63,6 @@ function gameScreenProps(
     online: true,
     synchronized: true,
     pending: false,
-    message: null,
     draft: null,
     keyboardOpen: false,
     onOpenKeyboard: vi.fn(),
@@ -71,7 +70,6 @@ function gameScreenProps(
     onCloseKeyboard: vi.fn(),
     onCancelDraft: vi.fn(),
     onSubmitMove: vi.fn(),
-    onMessage: vi.fn(),
     onRollback: vi.fn(),
     onCreateGame: vi.fn(),
     onSignOut: vi.fn(),
@@ -93,7 +91,6 @@ describe('GameScreen', () => {
         online
         synchronized
         pending={false}
-        message={null}
         draft={null}
         keyboardOpen={false}
         onOpenKeyboard={onOpenKeyboard}
@@ -101,7 +98,6 @@ describe('GameScreen', () => {
         onCloseKeyboard={vi.fn()}
         onCancelDraft={vi.fn()}
         onSubmitMove={vi.fn()}
-        onMessage={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
         onSignOut={vi.fn()}
@@ -121,7 +117,6 @@ describe('GameScreen', () => {
         online
         synchronized
         pending={false}
-        message={null}
         draft={{
           gameId: 'game-test',
           cell: '1_0',
@@ -134,7 +129,6 @@ describe('GameScreen', () => {
         onCloseKeyboard={vi.fn()}
         onCancelDraft={vi.fn()}
         onSubmitMove={vi.fn()}
-        onMessage={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
         onSignOut={vi.fn()}
@@ -159,7 +153,6 @@ describe('GameScreen', () => {
         online={false}
         synchronized={false}
         pending={false}
-        message={null}
         draft={null}
         keyboardOpen={false}
         onOpenKeyboard={vi.fn()}
@@ -167,7 +160,6 @@ describe('GameScreen', () => {
         onCloseKeyboard={vi.fn()}
         onCancelDraft={vi.fn()}
         onSubmitMove={vi.fn()}
-        onMessage={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
         onSignOut={vi.fn()}
@@ -270,34 +262,30 @@ describe('GameScreen', () => {
     expect(columns[1]).not.toHaveTextContent('АБЕ')
   })
 
-  it('blocks board actions while pending and explains unavailable cells', async () => {
+  it('ignores board actions while pending or when a cell is unavailable', async () => {
     const user = userEvent.setup()
-    const onMessage = vi.fn()
+    const onOpenKeyboard = vi.fn()
     const { rerender } = render(
       <GameScreen
-        {...gameScreenProps({ pending: true, onMessage })}
+        {...gameScreenProps({ pending: true, onOpenKeyboard })}
       />,
     )
 
     await user.click(
       screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
     )
-    expect(onMessage).toHaveBeenLastCalledWith(
-      'Дождись завершения операции.',
-    )
+    expect(onOpenKeyboard).not.toHaveBeenCalled()
 
-    rerender(<GameScreen {...gameScreenProps({ onMessage })} />)
+    rerender(<GameScreen {...gameScreenProps({ onOpenKeyboard })} />)
     await user.click(
       screen.getByRole('gridcell', { name: 'Клетка 2, 0, буква Б' }),
     )
-    expect(onMessage).toHaveBeenLastCalledWith('Эта клетка уже занята.')
+    expect(onOpenKeyboard).not.toHaveBeenCalled()
 
     await user.click(
       screen.getByRole('gridcell', { name: 'Пустая клетка 0, 0' }),
     )
-    expect(onMessage).toHaveBeenLastCalledWith(
-      'Новая буква должна касаться заполненной клетки.',
-    )
+    expect(onOpenKeyboard).not.toHaveBeenCalled()
   })
 
   it('renders the completed result without rollback and allows a new game', () => {
@@ -377,20 +365,15 @@ describe('GameScreen', () => {
     Reflect.deleteProperty(document, 'elementFromPoint')
   })
 
-  it('exposes live regions and accessible names for status changes', () => {
-    render(
-      <GameScreen
-        {...gameScreenProps({ message: 'Все сломалось, повтори!' })}
-      />,
-    )
+  it('keeps the game status accessible without a transient status panel', () => {
+    render(<GameScreen {...gameScreenProps({ pending: true })} />)
 
     expect(
       screen.getByRole('grid', { name: 'Игровое поле 5 на 5' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Все сломалось, повтори!')).toHaveAttribute(
-      'aria-live',
-      'assertive',
-    )
+    expect(screen.queryByText('Секундочку…')).not.toBeInTheDocument()
+    expect(document.querySelector('.action-message')).not.toBeInTheDocument()
+    expect(document.querySelector('.pending-message')).not.toBeInTheDocument()
     expect(screen.getByText('Мой ход').closest('[aria-live]')).not.toBeNull()
   })
 })

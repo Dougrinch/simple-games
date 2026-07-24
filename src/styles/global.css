@@ -631,8 +631,7 @@ button:disabled {
   color: var(--gold);
 }
 
-.action-message,
-.pending-message {
+.action-message {
   width: 100%;
   min-height: 46px;
   margin: 12px 0;
@@ -643,13 +642,6 @@ button:disabled {
   background: rgb(246 202 91 / 7%);
   line-height: 1.4;
   text-align: center;
-}
-
-.pending-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
 }
 
 .game-page > .danger-button,

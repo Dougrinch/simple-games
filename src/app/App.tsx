@@ -176,28 +176,6 @@ function EmptyGameScreen({
   )
 }
 
-function repositoryMessage(error: unknown, operation: 'move' | 'rollback') {
-  if (!(error instanceof RepositoryError)) {
-    return operation === 'move'
-      ? 'Все сломалось, повтори!'
-      : 'Слишком поздно'
-  }
-
-  if (error.kind === 'conflict') {
-    if (
-      operation === 'rollback' &&
-      error.domainFailure?.code === 'rollback-unavailable'
-    ) {
-      return 'Этот ход уже нельзя отменить'
-    }
-    return operation === 'move'
-      ? 'Все сломалось, повтори!'
-      : 'Слишком поздно'
-  }
-
-  return error.message
-}
-
 function AuthorizedGame({
   playerId,
   onSignOut,
@@ -265,7 +243,6 @@ function AuthorizedGame({
     ) {
       setDraft(null)
       setKeyboardOpen(false)
-      setMessage('Поле изменилось. Выбери букву заново.')
     }
   }, [
     draft,
@@ -342,7 +319,6 @@ function AuthorizedGame({
     }
 
     setPendingOperation('move')
-    setMessage(null)
 
     try {
       const confirmedGame = await repository.submitMove(
@@ -355,12 +331,10 @@ function AuthorizedGame({
       )
       setDraft(null)
       setKeyboardOpen(false)
-      setMessage(`Слово «${confirmedGame.lastWord}» принято.`)
     } catch (error) {
       markOffline(error)
       setDraft(null)
       setKeyboardOpen(false)
-      setMessage(repositoryMessage(error, 'move'))
       if (
         error instanceof RepositoryError &&
         (error.kind === 'conflict' || error.kind === 'unknown')
@@ -381,7 +355,6 @@ function AuthorizedGame({
     }
 
     setPendingOperation('rollback')
-    setMessage(null)
     setDraft(null)
 
     try {
@@ -397,10 +370,8 @@ function AuthorizedGame({
       setSession((current) =>
         current ? { ...current, game: confirmedGame } : current,
       )
-      setMessage('Последний ход отменён.')
     } catch (error) {
       markOffline(error)
-      setMessage(repositoryMessage(error, 'rollback'))
       if (
         error instanceof RepositoryError &&
         (error.kind === 'conflict' || error.kind === 'unknown')
@@ -489,12 +460,10 @@ function AuthorizedGame({
       online={session.online}
       synchronized={session.synchronized}
       pending={pendingOperation !== null}
-      message={message}
       draft={draft}
       keyboardOpen={keyboardOpen}
       onOpenKeyboard={(cell: CellKey) => {
         if (draft && draft.cell !== cell) {
-          setMessage('Сначала отмени текущую букву.')
           return
         }
         setDraft(
@@ -506,21 +475,17 @@ function AuthorizedGame({
           },
         )
         setKeyboardOpen(true)
-        setMessage(null)
       }}
       onChooseLetter={(letter) => {
         setDraft((current) => (current ? { ...current, letter } : current))
         setKeyboardOpen(false)
-        setMessage('Теперь проведи через буквы слова.')
       }}
       onCloseKeyboard={() => setKeyboardOpen(false)}
       onCancelDraft={() => {
         setDraft(null)
         setKeyboardOpen(false)
-        setMessage('Черновик удалён.')
       }}
       onSubmitMove={(move) => void submitMove(move)}
-      onMessage={setMessage}
       onRollback={() => void rollback()}
       onCreateGame={() => void createGame()}
       onSignOut={onSignOut}

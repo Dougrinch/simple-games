@@ -23,7 +23,6 @@ interface GameScreenProps {
   online: boolean
   synchronized: boolean
   pending: boolean
-  message: string | null
   draft: LocalDraft | null
   keyboardOpen: boolean
   onOpenKeyboard: (cell: CellKey) => void
@@ -31,7 +30,6 @@ interface GameScreenProps {
   onCloseKeyboard: () => void
   onCancelDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
-  onMessage: (message: string) => void
   onRollback: () => void
   onCreateGame: () => void
   onSignOut: () => void
@@ -51,7 +49,6 @@ export function GameScreen({
   online,
   synchronized,
   pending,
-  message,
   draft,
   keyboardOpen,
   onOpenKeyboard,
@@ -59,7 +56,6 @@ export function GameScreen({
   onCloseKeyboard,
   onCancelDraft,
   onSubmitMove,
-  onMessage,
   onRollback,
   onCreateGame,
   onSignOut,
@@ -166,15 +162,6 @@ export function GameScreen({
         disabled={!canAct}
         onCellPress={(cell) => {
           if (!canAct) {
-            if (!online || !synchronized) {
-              onMessage('Нет соединения — пока только смотрим.')
-            } else if (pending) {
-              onMessage('Дождись завершения операции.')
-            } else if (!isActive) {
-              onMessage('Партия уже завершена.')
-            } else if (!isMyTurn) {
-              onMessage('Сейчас ход вражины.')
-            }
             return
           }
 
@@ -184,12 +171,10 @@ export function GameScreen({
           }
 
           if (game.board[cell]) {
-            onMessage('Эта клетка уже занята.')
             return
           }
 
           if (!isAvailableCell(game.board, cell)) {
-            onMessage('Новая буква должна касаться заполненной клетки.')
             return
           }
 
@@ -197,7 +182,6 @@ export function GameScreen({
         }}
         onPathComplete={(path, invalidMessage) => {
           if (invalidMessage) {
-            onMessage(invalidMessage)
             return
           }
 
@@ -214,7 +198,6 @@ export function GameScreen({
           const result = validateMove(game, playerId, move)
 
           if (!result.ok) {
-            onMessage(result.message)
             return
           }
 
@@ -237,19 +220,6 @@ export function GameScreen({
             Ну, нафиг
           </button>
         </div>
-      )}
-
-      {message && (
-        <p className="action-message" role="status" aria-live="assertive">
-          {message}
-        </p>
-      )}
-
-      {pending && (
-        <p className="pending-message" role="status">
-          <span className="spinner" aria-hidden="true" />
-          Секундочку…
-        </p>
       )}
 
       {showRollback && (
