@@ -29,7 +29,7 @@ export function RussianKeyboard({
     <div
       className="keyboard-backdrop"
       role="presentation"
-      onPointerDown={(event) => {
+      onClick={(event) => {
         if (event.target === event.currentTarget) {
           onClose()
         }

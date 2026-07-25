@@ -390,6 +390,10 @@ describe('App states and orchestration', () => {
     const backdrop = document.querySelector('.keyboard-backdrop')
     expect(backdrop).not.toBeNull()
     fireEvent.pointerDown(backdrop as HTMLElement)
+    expect(
+      screen.getByRole('dialog', { name: 'Выбор буквы' }),
+    ).toBeInTheDocument()
+    fireEvent.click(backdrop as HTMLElement)
 
     expect(
       screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),

@@ -35,6 +35,7 @@ interface HighlightedMoveState {
 type PathDirection = 'up' | 'right' | 'down' | 'left'
 
 const MOVE_HIGHLIGHT_DURATION_MS = 3_000
+const COMPATIBILITY_CLICK_TIMEOUT_MS = 1_000
 
 const CELL_KEYS = Array.from({ length: 25 }, (_, index) =>
   coordinateToCellKey({
@@ -101,6 +102,26 @@ export function GameBoard({
   >(undefined)
   const gestureRef = useRef<GestureState | null>(null)
   const suppressNextClickRef = useRef(false)
+  const suppressClickTimeoutRef = useRef<
+    ReturnType<typeof globalThis.setTimeout> | undefined
+  >(undefined)
+
+  const clearSuppressedClick = useCallback(() => {
+    suppressNextClickRef.current = false
+    if (suppressClickTimeoutRef.current !== undefined) {
+      globalThis.clearTimeout(suppressClickTimeoutRef.current)
+      suppressClickTimeoutRef.current = undefined
+    }
+  }, [])
+
+  const suppressCompatibilityClick = useCallback(() => {
+    clearSuppressedClick()
+    suppressNextClickRef.current = true
+    suppressClickTimeoutRef.current = globalThis.setTimeout(() => {
+      suppressNextClickRef.current = false
+      suppressClickTimeoutRef.current = undefined
+    }, COMPATIBILITY_CLICK_TIMEOUT_MS)
+  }, [clearSuppressedClick])
 
   const clearHighlightTimer = useCallback(() => {
     if (highlightTimeoutRef.current !== undefined) {
@@ -147,6 +168,8 @@ export function GameBoard({
     highlightMove,
     lastMoveNumber,
   ])
+
+  useEffect(() => clearSuppressedClick, [clearSuppressedClick])
 
   const highlightedMove =
     highlightedMoveState?.gameId === game.id
@@ -228,6 +251,10 @@ export function GameBoard({
         role="grid"
         aria-label="Игровое поле 5 на 5"
         onPointerDown={(event) => {
+          // A real new press must not be mistaken for the delayed click from
+          // the previous mobile Pointer gesture.
+          clearSuppressedClick()
+
           if (disabled || !draft || gestureRef.current) {
             return
           }
@@ -277,10 +304,7 @@ export function GameBoard({
           event.preventDefault()
           const completedGesture = gesture
           gestureRef.current = null
-          suppressNextClickRef.current = true
-          globalThis.setTimeout(() => {
-            suppressNextClickRef.current = false
-          }, 0)
+          suppressCompatibilityClick()
           event.currentTarget.releasePointerCapture?.(event.pointerId)
           clearGesturePresentation(event.currentTarget)
           if (
@@ -302,10 +326,7 @@ export function GameBoard({
           }
 
           gestureRef.current = null
-          suppressNextClickRef.current = true
-          globalThis.setTimeout(() => {
-            suppressNextClickRef.current = false
-          }, 0)
+          suppressCompatibilityClick()
           event.currentTarget.releasePointerCapture?.(event.pointerId)
           clearGesturePresentation(event.currentTarget)
           onPathComplete([], 'Жест прерван. Попробуй ещё раз.')
@@ -358,7 +379,7 @@ export function GameBoard({
               aria-disabled={disabled}
               onClick={() => {
                 if (suppressNextClickRef.current) {
-                  suppressNextClickRef.current = false
+                  clearSuppressedClick()
                   return
                 }
 

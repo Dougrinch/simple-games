@@ -758,6 +758,51 @@ describe('GameBoard pointer path', () => {
     Reflect.deleteProperty(document, 'elementFromPoint')
   })
 
+  it('suppresses a delayed mobile click after a completed pointer tap', () => {
+    vi.useFakeTimers()
+
+    try {
+      const onCellPress = vi.fn()
+      render(
+        <GameBoard
+          game={game()}
+          draft={{ cell: '1_0', letter: 'А' }}
+          disabled={false}
+          onCellPress={onCellPress}
+          onPathComplete={vi.fn()}
+        />,
+      )
+
+      const board = screen.getByRole('grid', {
+        name: 'Игровое поле 5 на 5',
+      })
+      const draftCell = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква А, черновик',
+      })
+
+      fireEvent.pointerDown(draftCell, {
+        pointerId: 8,
+        clientX: 20,
+        clientY: 80,
+      })
+      fireEvent.pointerUp(board, {
+        pointerId: 8,
+        clientX: 20,
+        clientY: 80,
+      })
+      expect(onCellPress).toHaveBeenCalledOnce()
+
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+      fireEvent.click(draftCell)
+
+      expect(onCellPress).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('reports a concrete invalid swipe and never submits it as valid', () => {
     const onPathComplete = vi.fn()
     render(
