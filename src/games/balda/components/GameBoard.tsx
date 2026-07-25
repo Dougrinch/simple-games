@@ -155,7 +155,10 @@ export function GameBoard({
   )
 
   useEffect(() => {
-    if (lastMoveNumber !== null) {
+    if (
+      lastMoveNumber !== null &&
+      game.rollbackTargetMoveNumber === lastMoveNumber
+    ) {
       highlightMove(lastMoveNumber)
     } else {
       clearHighlightedMove()
@@ -165,6 +168,7 @@ export function GameBoard({
   }, [
     clearHighlightTimer,
     clearHighlightedMove,
+    game.rollbackTargetMoveNumber,
     highlightMove,
     lastMoveNumber,
   ])

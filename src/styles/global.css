@@ -338,6 +338,15 @@ button:disabled {
   justify-self: center;
 }
 
+.game-status > .rollback-button {
+  width: auto;
+  min-height: 40px;
+  padding: 8px 12px;
+  grid-column: 3;
+  justify-self: end;
+  white-space: nowrap;
+}
+
 .highlighted-word strong {
   display: block;
   font-size: clamp(1.5rem, 7vw, 2.2rem);
@@ -363,6 +372,12 @@ button:disabled {
   border-color: rgb(113 217 154 / 38%);
   color: #bff5d3;
   background: rgb(113 217 154 / 11%);
+}
+
+.turn-pill.is-enemy {
+  border-color: rgb(255 141 126 / 45%);
+  color: #ffd7d1;
+  background: rgb(255 141 126 / 16%);
 }
 
 .final-result {

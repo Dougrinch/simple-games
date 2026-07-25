@@ -67,7 +67,7 @@ export function GameScreen({
     game.moves?.[String(game.moveCount)]?.word ?? null,
   )
   const moves = Object.values(game.moves ?? {}).sort(
-    (first, second) => first.number - second.number,
+    (first, second) => second.number - first.number,
   )
   const lastMove = game.moves?.[String(game.moveCount)]
   const showRollback =
@@ -77,8 +77,8 @@ export function GameScreen({
     canRollbackLastMove(game, playerId)
   const rollbackLabel =
     lastMove?.authorPlayerId === playerId
-      ? 'Ой, шучушучу'
-      : 'Ненене, так нельзя'
+      ? 'ГАААААЛЯ!!'
+      : 'низя!'
 
   return (
     <main className="game-page">
@@ -118,13 +118,24 @@ export function GameScreen({
       <section className="game-status" aria-live="polite">
         {game.status === 'active' ? (
           <>
-            <span className={`turn-pill ${isMyTurn ? 'is-mine' : ''}`}>
+            <span
+              className={`turn-pill ${isMyTurn ? 'is-mine' : 'is-enemy'}`}
+            >
               {isMyTurn ? 'Мой ход' : 'Ход вражины'}
             </span>
             {highlightedWord && (
               <p className="highlighted-word">
                 <strong>{highlightedWord}</strong>
               </p>
+            )}
+            {showRollback && (
+              <button
+                className="danger-button rollback-button"
+                type="button"
+                onClick={onRollback}
+              >
+                {rollbackLabel}
+              </button>
             )}
           </>
         ) : (
@@ -195,16 +206,6 @@ export function GameScreen({
           onSubmitMove(move)
         }}
       />
-
-      {showRollback && (
-        <button
-          className="danger-button"
-          type="button"
-          onClick={onRollback}
-        >
-          {rollbackLabel}
-        </button>
-      )}
 
       {game.status === 'completed' && (
         <button

@@ -53,6 +53,25 @@ function twiceMovedGame() {
   return result.value
 }
 
+function thriceMovedGame() {
+  const secondMove = twiceMovedGame()
+  const result = applyMove(
+    secondMove,
+    'grinch131',
+    {
+      expectedRevision: 2,
+      cell: '1_2',
+      letter: 'Т',
+      path: ['1_2', '1_1', '2_1'],
+    },
+    4,
+  )
+  if (!result.ok) {
+    throw new Error(result.message)
+  }
+  return result.value
+}
+
 function rolledBackGame() {
   const twiceMoved = twiceMovedGame()
   const result = rollbackLastMove(twiceMoved, 'grinch131', {
@@ -280,22 +299,24 @@ describe('GameScreen', () => {
       <GameScreen {...gameScreenProps({ game: moved })} />,
     )
 
-    expect(screen.getByText('Ход вражины')).toBeInTheDocument()
+    expect(screen.getByText('Ход вражины')).toHaveClass('is-enemy')
     expect(document.querySelector('.game-status')).toHaveTextContent('АБЕ')
     expect(screen.queryByText(/Последнее слово/u)).not.toBeInTheDocument()
     expect(screen.getByLabelText('3 очков')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Ой, шучушучу' }),
-    ).toBeInTheDocument()
+    const ownRollback = screen.getByRole('button', {
+      name: 'ГАААААЛЯ!!',
+    })
+    expect(ownRollback).toBeInTheDocument()
+    expect(ownRollback.parentElement).toHaveClass('game-status')
 
     rerender(
       <GameScreen
         {...gameScreenProps({ game: moved, playerId: 'hinhillaa' })}
       />,
     )
-    expect(screen.getByText('Мой ход')).toBeInTheDocument()
+    expect(screen.getByText('Мой ход')).toHaveClass('is-mine')
     expect(
-      screen.getByRole('button', { name: 'Ненене, так нельзя' }),
+      screen.getByRole('button', { name: 'низя!' }),
     ).toBeInTheDocument()
   })
 
@@ -339,11 +360,39 @@ describe('GameScreen', () => {
     }
   })
 
-  it('shows each player words in a separate move-history column', () => {
-    render(
+  it('clears the highlighted word instead of selecting the previous move after rollback', () => {
+    const { rerender } = render(
       <GameScreen
         {...gameScreenProps({
           game: twiceMovedGame(),
+          playerId: 'grinch131',
+        })}
+      />,
+    )
+
+    const status = document.querySelector('.game-status')
+    expect(status).toHaveTextContent('РЕР')
+
+    rerender(
+      <GameScreen
+        {...gameScreenProps({
+          game: rolledBackGame(),
+          playerId: 'grinch131',
+        })}
+      />,
+    )
+
+    expect(status).not.toHaveTextContent('РЕР')
+    expect(status).not.toHaveTextContent('АБЕ')
+    expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+    expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
+  })
+
+  it('shows each player words newest first in a separate move-history column', () => {
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: thriceMovedGame(),
           profiles: {
             grinch131: {
               playerId: 'grinch131',
@@ -368,14 +417,20 @@ describe('GameScreen', () => {
 
     const history = screen.getByRole('region', { name: 'История ходов' })
     const columns = history.querySelectorAll('.move-history-column')
+    const firstPlayerColumn = columns.item(0)
+    const secondPlayerColumn = columns.item(1)
 
     expect(columns).toHaveLength(2)
-    expect(columns[0]).toHaveTextContent('Гринч')
-    expect(columns[0]).toHaveTextContent('АБЕ')
-    expect(columns[0]).not.toHaveTextContent('РЕР')
-    expect(columns[1]).toHaveTextContent('Хинхилла')
-    expect(columns[1]).toHaveTextContent('РЕР')
-    expect(columns[1]).not.toHaveTextContent('АБЕ')
+    expect(firstPlayerColumn).toHaveTextContent('Гринч')
+    expect(
+      Array.from(firstPlayerColumn.querySelectorAll('li'), (item) =>
+        item.textContent,
+      ),
+    ).toEqual(['ТРЕ', 'АБЕ'])
+    expect(firstPlayerColumn).not.toHaveTextContent('РЕР')
+    expect(secondPlayerColumn).toHaveTextContent('Хинхилла')
+    expect(secondPlayerColumn).toHaveTextContent('РЕР')
+    expect(secondPlayerColumn).not.toHaveTextContent('АБЕ')
   })
 
   it('does not offer a second consecutive rollback', () => {
@@ -390,10 +445,10 @@ describe('GameScreen', () => {
     )
 
     expect(
-      screen.queryByRole('button', { name: 'Ой, шучушучу' }),
+      screen.queryByRole('button', { name: 'ГАААААЛЯ!!' }),
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Ненене, так нельзя' }),
+      screen.queryByRole('button', { name: 'низя!' }),
     ).not.toBeInTheDocument()
 
     rerender(
@@ -406,10 +461,10 @@ describe('GameScreen', () => {
     )
 
     expect(
-      screen.queryByRole('button', { name: 'Ой, шучушучу' }),
+      screen.queryByRole('button', { name: 'ГАААААЛЯ!!' }),
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Ненене, так нельзя' }),
+      screen.queryByRole('button', { name: 'низя!' }),
     ).not.toBeInTheDocument()
   })
 
