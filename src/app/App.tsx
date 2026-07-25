@@ -463,16 +463,15 @@ function AuthorizedGame({
       draft={draft}
       keyboardOpen={keyboardOpen}
       onOpenKeyboard={(cell: CellKey) => {
-        if (draft && draft.cell !== cell) {
-          return
-        }
-        setDraft(
-          draft ?? {
-            gameId: session.game?.id ?? '',
-            cell,
-            letter: null,
-            expectedRevision: session.game?.revision ?? 0,
-          },
+        setDraft((current) =>
+          current?.cell === cell
+            ? current
+            : {
+                gameId: session.game?.id ?? '',
+                cell,
+                letter: null,
+                expectedRevision: session.game?.revision ?? 0,
+              },
         )
         setKeyboardOpen(true)
       }}
@@ -480,8 +479,11 @@ function AuthorizedGame({
         setDraft((current) => (current ? { ...current, letter } : current))
         setKeyboardOpen(false)
       }}
-      onCloseKeyboard={() => setKeyboardOpen(false)}
-      onCancelDraft={() => {
+      onCloseKeyboard={() => {
+        setDraft(null)
+        setKeyboardOpen(false)
+      }}
+      onClearDraft={() => {
         setDraft(null)
         setKeyboardOpen(false)
       }}

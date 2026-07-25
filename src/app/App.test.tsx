@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -301,7 +301,11 @@ describe('App states and orchestration', () => {
       screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
     )
     await user.click(screen.getByRole('button', { name: 'Буква Ё' }))
-    expect(screen.getByText('Черновая буква')).toBeInTheDocument()
+    expect(
+      screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква Ё, черновик',
+      }),
+    ).toBeInTheDocument()
 
     act(() => {
       repositoryMocks.listener?.(
@@ -316,10 +320,87 @@ describe('App states and orchestration', () => {
       )
     })
 
-    expect(screen.queryByText('Черновая буква')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    ).toBeInTheDocument()
     expect(
       screen.queryByText('Поле изменилось. Выбери букву заново.'),
     ).not.toBeInTheDocument()
+  })
+
+  it('replaces a chosen draft when another available cell is pressed', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    repositoryMocks.session = session({
+      game: createInitialGame('game-1', 'БЕРЕГ', 'grinch131', 1),
+    })
+    render(<App />)
+
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Буква Ё' }))
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 1' }),
+    )
+
+    expect(
+      screen.getByRole('dialog', { name: 'Выбор буквы' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Буква Я' }))
+    expect(
+      screen.getByRole('gridcell', {
+        name: 'Клетка 1, 1, буква Я, черновик',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('gridcell', {
+        name: 'Клетка 1, 1, буква Я, черновик',
+      }),
+    )
+    expect(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 1' }),
+    ).toBeInTheDocument()
+  })
+
+  it('leaves no draft after letter selection is closed without a choice', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    repositoryMocks.session = session({
+      game: createInitialGame('game-1', 'БЕРЕГ', 'grinch131', 1),
+    })
+    render(<App />)
+
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    )
+    const backdrop = document.querySelector('.keyboard-backdrop')
+    expect(backdrop).not.toBeNull()
+    fireEvent.pointerDown(backdrop as HTMLElement)
+
+    expect(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 1' }),
+    )
+    expect(
+      screen.getByRole('dialog', { name: 'Выбор буквы' }),
+    ).toBeInTheDocument()
   })
 
   it('resynchronizes silently when rollback is no longer available', async () => {

@@ -81,7 +81,7 @@ function gameScreenProps(
     onOpenKeyboard: vi.fn(),
     onChooseLetter: vi.fn(),
     onCloseKeyboard: vi.fn(),
-    onCancelDraft: vi.fn(),
+    onClearDraft: vi.fn(),
     onSubmitMove: vi.fn(),
     onRollback: vi.fn(),
     onCreateGame: vi.fn(),
@@ -108,7 +108,7 @@ describe('GameScreen', () => {
         onOpenKeyboard={onOpenKeyboard}
         onChooseLetter={onChooseLetter}
         onCloseKeyboard={vi.fn()}
-        onCancelDraft={vi.fn()}
+        onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
@@ -144,7 +144,7 @@ describe('GameScreen', () => {
         onOpenKeyboard={onOpenKeyboard}
         onChooseLetter={onChooseLetter}
         onCloseKeyboard={vi.fn()}
-        onCancelDraft={vi.fn()}
+        onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
@@ -152,8 +152,13 @@ describe('GameScreen', () => {
     )
 
     expect(
-      screen.getByRole('dialog', { name: 'Выбери букву' }),
+      screen.getByRole('dialog', { name: 'Выбор буквы' }),
     ).toBeInTheDocument()
+    expect(screen.queryByText('Новая клетка')).not.toBeInTheDocument()
+    expect(screen.queryByText('Выбери букву')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Закрыть клавиатуру' }),
+    ).not.toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /^Буква /u })).toHaveLength(33)
     expect(screen.getByRole('button', { name: 'Буква А' })).toHaveFocus()
     await user.click(screen.getByRole('button', { name: 'Буква Ё' }))
@@ -174,7 +179,7 @@ describe('GameScreen', () => {
         onOpenKeyboard={vi.fn()}
         onChooseLetter={vi.fn()}
         onCloseKeyboard={vi.fn()}
-        onCancelDraft={vi.fn()}
+        onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onCreateGame={vi.fn()}
@@ -187,10 +192,8 @@ describe('GameScreen', () => {
     ).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('closes the keyboard with Escape and cancels the whole draft', async () => {
-    const user = userEvent.setup()
+  it('closes the keyboard with Escape without showing draft actions', () => {
     const onCloseKeyboard = vi.fn()
-    const onCancelDraft = vi.fn()
     render(
       <GameScreen
         {...gameScreenProps({
@@ -202,16 +205,73 @@ describe('GameScreen', () => {
             expectedRevision: 0,
           },
           onCloseKeyboard,
-          onCancelDraft,
         })}
       />,
     )
 
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
-    expect(onCloseKeyboard).toHaveBeenCalledOnce()
+    expect(screen.queryByText('Черновая буква')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ну, нафиг' }),
+    ).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Ну, нафиг' }))
-    expect(onCancelDraft).toHaveBeenCalledOnce()
+    fireEvent.keyDown(
+      screen.getByRole('dialog', { name: 'Выбор буквы' }),
+      { key: 'Escape' },
+    )
+    expect(onCloseKeyboard).toHaveBeenCalledOnce()
+  })
+
+  it('opens letter selection for another available cell over a draft', async () => {
+    const user = userEvent.setup()
+    const onOpenKeyboard = vi.fn()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          draft: {
+            gameId: 'game-test',
+            cell: '1_0',
+            letter: 'Ё',
+            expectedRevision: 0,
+          },
+          onOpenKeyboard,
+        })}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 1' }),
+    )
+
+    expect(onOpenKeyboard).toHaveBeenCalledWith('1_1')
+  })
+
+  it('clears a draft letter when its cell is tapped', async () => {
+    const user = userEvent.setup()
+    const onClearDraft = vi.fn()
+    const onOpenKeyboard = vi.fn()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          draft: {
+            gameId: 'game-test',
+            cell: '1_0',
+            letter: 'Ё',
+            expectedRevision: 0,
+          },
+          onClearDraft,
+          onOpenKeyboard,
+        })}
+      />,
+    )
+
+    await user.click(
+      screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква Ё, черновик',
+      }),
+    )
+
+    expect(onClearDraft).toHaveBeenCalledOnce()
+    expect(onOpenKeyboard).not.toHaveBeenCalled()
   })
 
   it('shows exact score, turn, highlighted word and both rollback variants', () => {
@@ -396,6 +456,7 @@ describe('GameScreen', () => {
 
   it('validates and submits a complete move immediately on pointer release', () => {
     const onSubmitMove = vi.fn()
+    const onClearDraft = vi.fn()
     render(
       <GameScreen
         {...gameScreenProps({
@@ -406,6 +467,7 @@ describe('GameScreen', () => {
             expectedRevision: 0,
           },
           onSubmitMove,
+          onClearDraft,
         })}
       />,
     )
@@ -450,6 +512,7 @@ describe('GameScreen', () => {
       letter: 'А',
       path: ['1_0', '2_0', '2_1'],
     })
+    expect(onClearDraft).not.toHaveBeenCalled()
     Reflect.deleteProperty(document, 'elementFromPoint')
   })
 

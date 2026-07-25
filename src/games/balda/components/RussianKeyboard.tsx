@@ -39,7 +39,7 @@ export function RussianKeyboard({
         className="letter-keyboard"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="keyboard-title"
+        aria-label="Выбор буквы"
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.preventDefault()
@@ -47,20 +47,6 @@ export function RussianKeyboard({
           }
         }}
       >
-        <div className="keyboard-heading">
-          <div>
-            <p className="eyebrow">Новая клетка</p>
-            <h2 id="keyboard-title">Выбери букву</h2>
-          </div>
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="Закрыть клавиатуру"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
         <div className="letter-grid" aria-label="Русский алфавит">
           {RUSSIAN_ALPHABET.map((letter) => (
             <button

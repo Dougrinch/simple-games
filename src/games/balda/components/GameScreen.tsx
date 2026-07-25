@@ -30,7 +30,7 @@ interface GameScreenProps {
   onOpenKeyboard: (cell: CellKey) => void
   onChooseLetter: (letter: string) => void
   onCloseKeyboard: () => void
-  onCancelDraft: () => void
+  onClearDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
   onRollback: () => void
   onCreateGame: () => void
@@ -55,7 +55,7 @@ export function GameScreen({
   onOpenKeyboard,
   onChooseLetter,
   onCloseKeyboard,
-  onCancelDraft,
+  onClearDraft,
   onSubmitMove,
   onRollback,
   onCreateGame,
@@ -157,7 +157,7 @@ export function GameScreen({
           }
 
           if (draft?.cell === cell) {
-            onOpenKeyboard(cell)
+            onClearDraft()
             return
           }
 
@@ -195,23 +195,6 @@ export function GameScreen({
           onSubmitMove(move)
         }}
       />
-
-      {draft && (
-        <div className="draft-actions" aria-label="Действия с черновиком">
-          <div>
-            <span>Черновая буква</span>
-            <strong>{draft.letter ?? 'не выбрана'}</strong>
-          </div>
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={pending}
-            onClick={onCancelDraft}
-          >
-            Ну, нафиг
-          </button>
-        </div>
-      )}
 
       {showRollback && (
         <button
