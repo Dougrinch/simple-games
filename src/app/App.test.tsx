@@ -444,7 +444,7 @@ describe('App states and orchestration', () => {
     render(<App />)
 
     await user.click(
-      screen.getByRole('button', { name: 'Ой, шучушучу' }),
+      screen.getByRole('button', { name: 'ГАААААЛЯ!!' }),
     )
 
     await vi.waitFor(() => {
@@ -483,7 +483,7 @@ describe('App states and orchestration', () => {
     render(<App />)
 
     await user.click(
-      screen.getByRole('button', { name: 'Ой, шучушучу' }),
+      screen.getByRole('button', { name: 'ГАААААЛЯ!!' }),
     )
 
     expect(await screen.findByText('Падажжи')).toBeInTheDocument()

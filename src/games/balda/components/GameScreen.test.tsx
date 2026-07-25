@@ -502,7 +502,7 @@ describe('GameScreen', () => {
 
     expect(screen.getByText('Победил hinhillaa')).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Ой, шучушучу' }),
+      screen.queryByRole('button', { name: 'ГАААААЛЯ!!' }),
     ).not.toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Новая игра' }),
