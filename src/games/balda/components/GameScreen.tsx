@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
   BaldaGame,
@@ -61,6 +63,9 @@ export function GameScreen({
   const isActive = game.status === 'active'
   const isMyTurn = isActive && game.turnPlayerId === playerId
   const canAct = isActive && isMyTurn && online && synchronized && !pending
+  const [highlightedWord, setHighlightedWord] = useState<string | null>(
+    game.moves?.[String(game.moveCount)]?.word ?? null,
+  )
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => first.number - second.number,
   )
@@ -116,9 +121,11 @@ export function GameScreen({
             <span className={`turn-pill ${isMyTurn ? 'is-mine' : ''}`}>
               {isMyTurn ? 'Мой ход' : 'Ход вражины'}
             </span>
-            <p>
-              Последнее слово <strong>{game.lastWord}</strong>
-            </p>
+            {highlightedWord && (
+              <p className="highlighted-word">
+                <strong>{highlightedWord}</strong>
+              </p>
+            )}
           </>
         ) : (
           <div className="final-result">
@@ -143,6 +150,7 @@ export function GameScreen({
           draft?.letter ? { cell: draft.cell, letter: draft.letter } : null
         }
         disabled={!canAct}
+        onHighlightedWordChange={setHighlightedWord}
         onCellPress={(cell) => {
           if (!canAct) {
             return

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   coordinateToCellKey,
@@ -18,6 +18,7 @@ interface GameBoardProps {
   disabled: boolean
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
+  onHighlightedWordChange?: (word: string | null) => void
 }
 
 interface GestureState {
@@ -26,7 +27,14 @@ interface GestureState {
   invalidMessage: string | null
 }
 
+interface HighlightedMoveState {
+  gameId: string
+  moveNumber: number
+}
+
 type PathDirection = 'up' | 'right' | 'down' | 'left'
+
+const MOVE_HIGHLIGHT_DURATION_MS = 3_000
 
 const CELL_KEYS = Array.from({ length: 25 }, (_, index) =>
   coordinateToCellKey({
@@ -78,10 +86,76 @@ export function GameBoard({
   disabled,
   onCellPress,
   onPathComplete,
+  onHighlightedWordChange,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
+  const lastMoveNumber = lastMove?.number ?? null
+  const [highlightedMoveState, setHighlightedMoveState] =
+    useState<HighlightedMoveState | null>(
+      lastMove
+        ? { gameId: game.id, moveNumber: lastMove.number }
+        : null,
+    )
+  const highlightTimeoutRef = useRef<
+    ReturnType<typeof globalThis.setTimeout> | undefined
+  >(undefined)
   const gestureRef = useRef<GestureState | null>(null)
   const suppressNextClickRef = useRef(false)
+
+  const clearHighlightTimer = useCallback(() => {
+    if (highlightTimeoutRef.current !== undefined) {
+      globalThis.clearTimeout(highlightTimeoutRef.current)
+      highlightTimeoutRef.current = undefined
+    }
+  }, [])
+
+  const clearHighlightedMove = useCallback(() => {
+    clearHighlightTimer()
+    setHighlightedMoveState(null)
+  }, [clearHighlightTimer])
+
+  const highlightMove = useCallback(
+    (moveNumber: number) => {
+      clearHighlightTimer()
+
+      const nextHighlight = { gameId: game.id, moveNumber }
+      setHighlightedMoveState(nextHighlight)
+      highlightTimeoutRef.current = globalThis.setTimeout(() => {
+        setHighlightedMoveState((currentHighlight) =>
+          currentHighlight?.gameId === nextHighlight.gameId &&
+          currentHighlight.moveNumber === nextHighlight.moveNumber
+            ? null
+            : currentHighlight,
+        )
+        highlightTimeoutRef.current = undefined
+      }, MOVE_HIGHLIGHT_DURATION_MS)
+    },
+    [clearHighlightTimer, game.id],
+  )
+
+  useEffect(() => {
+    if (lastMoveNumber !== null) {
+      highlightMove(lastMoveNumber)
+    } else {
+      clearHighlightedMove()
+    }
+
+    return clearHighlightTimer
+  }, [
+    clearHighlightTimer,
+    clearHighlightedMove,
+    highlightMove,
+    lastMoveNumber,
+  ])
+
+  const highlightedMove =
+    highlightedMoveState?.gameId === game.id
+      ? game.moves?.[String(highlightedMoveState.moveNumber)]
+      : undefined
+
+  useEffect(() => {
+    onHighlightedWordChange?.(highlightedMove?.word ?? null)
+  }, [highlightedMove?.word, onHighlightedWordChange])
 
   const updatePath = (
     nextCell: CellKey | null,
@@ -241,15 +315,21 @@ export function GameBoard({
           const cell = game.board[cellKey]
           const isDraft = draft?.cell === cellKey
           const letter = isDraft ? draft.letter : cell?.letter
-          const lastPathOrder = lastMove?.path.indexOf(cellKey) ?? -1
-          const isLastLetter = lastMove?.cell === cellKey
+          const lastPathOrder = highlightedMove?.path.indexOf(cellKey) ?? -1
+          const isLastLetter = highlightedMove?.cell === cellKey
           const lastPathPrevious =
             lastPathOrder >= 0
-              ? directionTo(cellKey, lastMove?.path[lastPathOrder - 1])
+              ? directionTo(
+                  cellKey,
+                  highlightedMove?.path[lastPathOrder - 1],
+                )
               : undefined
           const lastPathNext =
             lastPathOrder >= 0
-              ? directionTo(cellKey, lastMove?.path[lastPathOrder + 1])
+              ? directionTo(
+                  cellKey,
+                  highlightedMove?.path[lastPathOrder + 1],
+                )
               : undefined
           const label = letter
             ? `Клетка ${cellKey.replace('_', ', ')}, буква ${letter}${
@@ -281,6 +361,20 @@ export function GameBoard({
                   suppressNextClickRef.current = false
                   return
                 }
+
+                if (!draft && cell) {
+                  const moveNumber = cell.moveNumber
+                  if (
+                    moveNumber !== null &&
+                    game.moves?.[String(moveNumber)]
+                  ) {
+                    highlightMove(moveNumber)
+                  } else {
+                    clearHighlightedMove()
+                  }
+                  return
+                }
+
                 onCellPress(cellKey)
               }}
             >

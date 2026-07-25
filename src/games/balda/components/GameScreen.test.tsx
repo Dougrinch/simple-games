@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -214,7 +214,7 @@ describe('GameScreen', () => {
     expect(onCancelDraft).toHaveBeenCalledOnce()
   })
 
-  it('shows exact score, turn, last word and both rollback variants', () => {
+  it('shows exact score, turn, highlighted word and both rollback variants', () => {
     const moved = movedGame()
     const { rerender } = render(
       <GameScreen {...gameScreenProps({ game: moved })} />,
@@ -222,6 +222,7 @@ describe('GameScreen', () => {
 
     expect(screen.getByText('Ход вражины')).toBeInTheDocument()
     expect(document.querySelector('.game-status')).toHaveTextContent('АБЕ')
+    expect(screen.queryByText(/Последнее слово/u)).not.toBeInTheDocument()
     expect(screen.getByLabelText('3 очков')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Ой, шучушучу' }),
@@ -236,6 +237,46 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'Ненене, так нельзя' }),
     ).toBeInTheDocument()
+  })
+
+  it('shows only the currently highlighted word and hides it with the highlight', () => {
+    vi.useFakeTimers()
+
+    try {
+      render(
+        <GameScreen
+          {...gameScreenProps({
+            game: twiceMovedGame(),
+            playerId: 'grinch131',
+          })}
+        />,
+      )
+
+      const status = document.querySelector('.game-status')
+      expect(status).toHaveTextContent('РЕР')
+      expect(status).not.toHaveTextContent('Последнее слово')
+
+      fireEvent.click(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      )
+
+      expect(status).toHaveTextContent('АБЕ')
+      expect(status).not.toHaveTextContent('РЕР')
+
+      act(() => {
+        vi.advanceTimersByTime(2_999)
+      })
+      expect(status).toHaveTextContent('АБЕ')
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(status).not.toHaveTextContent('АБЕ')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('shows each player words in a separate move-history column', () => {
@@ -426,6 +467,154 @@ describe('GameScreen', () => {
 })
 
 describe('GameBoard pointer path', () => {
+  it('removes the last word and letter highlight three seconds after each move', () => {
+    vi.useFakeTimers()
+
+    try {
+      const { rerender } = render(
+        <GameBoard
+          game={movedGame()}
+          draft={null}
+          disabled
+          onCellPress={vi.fn()}
+          onPathComplete={vi.fn()}
+        />,
+      )
+
+      const firstMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква А',
+      })
+      expect(firstMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+      expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
+
+      act(() => {
+        vi.advanceTimersByTime(2_000)
+      })
+
+      rerender(
+        <GameBoard
+          game={twiceMovedGame()}
+          draft={null}
+          disabled
+          onCellPress={vi.fn()}
+          onPathComplete={vi.fn()}
+        />,
+      )
+
+      const secondMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 1, буква Р',
+      })
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+      act(() => {
+        vi.advanceTimersByTime(2_999)
+      })
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+      expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('highlights the word that introduced a tapped letter from in-memory moves', () => {
+    vi.useFakeTimers()
+
+    try {
+      const onCellPress = vi.fn()
+      render(
+        <GameBoard
+          game={twiceMovedGame()}
+          draft={null}
+          disabled
+          onCellPress={onCellPress}
+          onPathComplete={vi.fn()}
+        />,
+      )
+
+      const firstMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква А',
+      })
+      const secondMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 1, буква Р',
+      })
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+      fireEvent.click(firstMoveLetter)
+
+      expect(onCellPress).not.toHaveBeenCalled()
+      expect(firstMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+      expect(secondMoveLetter).not.toHaveClass(
+        'is-last-path',
+        'is-last-letter',
+      )
+      expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
+
+      act(() => {
+        vi.advanceTimersByTime(2_000)
+      })
+      fireEvent.click(secondMoveLetter)
+
+      expect(firstMoveLetter).not.toHaveClass(
+        'is-last-path',
+        'is-last-letter',
+      )
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+      act(() => {
+        vi.advanceTimersByTime(2_999)
+      })
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+      expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps letter taps in word-building mode reserved for path selection', () => {
+    vi.useFakeTimers()
+
+    try {
+      const onCellPress = vi.fn()
+      render(
+        <GameBoard
+          game={twiceMovedGame()}
+          draft={{ cell: '0_1', letter: 'К' }}
+          disabled={false}
+          onCellPress={onCellPress}
+          onPathComplete={vi.fn()}
+        />,
+      )
+
+      act(() => {
+        vi.advanceTimersByTime(3_000)
+      })
+
+      const firstMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква А',
+      })
+      fireEvent.click(firstMoveLetter)
+
+      expect(onCellPress).toHaveBeenCalledWith('1_0')
+      expect(firstMoveLetter).not.toHaveClass(
+        'is-last-path',
+        'is-last-letter',
+      )
+      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('submits the ordered path immediately on pointer release', () => {
     const onPathComplete = vi.fn()
     const onCellPress = vi.fn()
