@@ -117,6 +117,10 @@ Production-переменные находятся в `.env.local` и GitHub Act
 Variables. `.env.local` исключён из Git. Пошаговая настройка сторонних сервисов
 описана в [docs/external-services.md](docs/external-services.md).
 
+Отдельная инструкция по бесплатным системным push-уведомлениям через Cloudflare
+Workers находится в
+[docs/push-notifications.md](docs/push-notifications.md).
+
 После изменения `database.rules.json` владелец вручную публикует правила:
 
 ```bash
