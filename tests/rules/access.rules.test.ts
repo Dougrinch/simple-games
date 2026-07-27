@@ -90,6 +90,13 @@ describe('trusted-player Realtime Database boundary', () => {
     const database = allowedDatabase(DENIED_EMAIL)
 
     await assertFails(get(ref(database, 'dictionaries/balda/startWords/count')))
+    await assertFails(get(ref(database, 'pushSubscriptions/grinch131')))
+    await assertFails(
+      set(ref(database, 'pushSubscriptions/grinch131/device-1'), {
+        endpoint: 'https://push.example/device-1',
+        keys: { p256dh: 'key', auth: 'auth' },
+      }),
+    )
     await assertFails(
       set(ref(database, 'gameTypes/balda/currentGameId'), 'forbidden-game'),
     )
@@ -121,6 +128,16 @@ describe('trusted-player Realtime Database boundary', () => {
       )
       await assertSucceeds(
         set(ref(database, 'unknownNamespace/anything'), true),
+      )
+      await assertSucceeds(
+        set(ref(database, 'pushSubscriptions/grinch131/device-1'), {
+          endpoint: 'https://push.example/device-1',
+          expirationTime: null,
+          keys: { p256dh: 'key', auth: 'auth' },
+        }),
+      )
+      await assertSucceeds(
+        get(ref(database, 'pushSubscriptions/grinch131/device-1')),
       )
       await assertSucceeds(remove(ref(database, 'gameTypes/balda/games/existing')))
     },

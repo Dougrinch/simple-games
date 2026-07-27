@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import {
   signOutCurrentUser,
@@ -6,6 +6,7 @@ import {
   subscribeAuthSession,
   type AuthSession,
 } from '../features/auth/authService'
+import { PushNotificationsControl } from '../features/push/PushNotificationsControl'
 import { GameScreen, type LocalDraft } from '../games/balda/components/GameScreen'
 import {
   BaldaRepository,
@@ -13,6 +14,7 @@ import {
   type BaldaSession,
 } from '../games/balda/repository'
 import type { CellKey, MoveDraft, PlayerId } from '../games/balda/types'
+import { notifyOtherPlayer } from '../platform/push/pushClient'
 
 function LoadingScreen({
   title = 'Загружаем игру',
@@ -130,12 +132,14 @@ function EmptyGameScreen({
   online,
   synchronized,
   pending,
+  notificationControl,
   onCreate,
   onSignOut,
 }: {
   online: boolean
   synchronized: boolean
   pending: boolean
+  notificationControl?: ReactNode
   onCreate: () => void
   onSignOut: () => void
 }) {
@@ -168,6 +172,7 @@ function EmptyGameScreen({
         >
           Новая игра
         </button>
+        {notificationControl}
         <button className="text-button" type="button" onClick={onSignOut}>
           Выйти из аккаунта
         </button>
@@ -331,6 +336,9 @@ function AuthorizedGame({
       )
       setDraft(null)
       setKeyboardOpen(false)
+      void notifyOtherPlayer().catch((error: unknown) => {
+        console.error('Sending a turn notification failed.', error)
+      })
     } catch (error) {
       markOffline(error)
       setDraft(null)
@@ -440,6 +448,12 @@ function AuthorizedGame({
           online={session.online}
           synchronized={session.synchronized}
           pending={pendingOperation !== null}
+          notificationControl={
+            <PushNotificationsControl
+              playerId={playerId}
+              online={session.online}
+            />
+          }
           onCreate={() => void createGame()}
           onSignOut={onSignOut}
         />
@@ -460,6 +474,12 @@ function AuthorizedGame({
       online={session.online}
       synchronized={session.synchronized}
       pending={pendingOperation !== null}
+      notificationControl={
+        <PushNotificationsControl
+          playerId={playerId}
+          online={session.online}
+        />
+      }
       draft={draft}
       keyboardOpen={keyboardOpen}
       onOpenKeyboard={(cell: CellKey) => {

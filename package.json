@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "push-worker"
+  ],
   "engines": {
     "node": ">=24 <25",
     "npm": ">=11"
@@ -11,17 +14,22 @@
     "dev": "vite",
     "build": "npm run env:check && npm run typecheck && vite build",
     "preview": "vite preview",
-    "lint": "oxlint src tests scripts vite.config.ts vitest.rules.config.ts",
+    "lint": "oxlint src tests scripts push-worker/src push-worker/test public/sw.js vite.config.ts vitest.rules.config.ts push-worker/vitest.config.ts",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:rules": "firebase emulators:exec --only database --project demo-simple-games \"vitest run --config vitest.rules.config.ts\"",
+    "push:dev": "npm run dev --workspace push-worker",
+    "push:types": "npm run types --workspace push-worker",
+    "push:typecheck": "npm run typecheck --workspace push-worker",
+    "push:test": "npm test --workspace push-worker",
+    "push:check": "npm run check --workspace push-worker",
     "emulators": "firebase emulators:start --only auth,database --project demo-simple-games",
     "emulators:seed": "node scripts/seed-emulator.mjs",
     "seed:validate": "node scripts/seed-emulator.mjs --validate-only",
     "env:check": "node scripts/check-env.mjs production",
-    "check": "npm run lint && npm run typecheck && npm run seed:validate && npm run test && npm run test:rules && npm run env:check && vite build"
+    "check": "npm run lint && npm run typecheck && npm run push:check && npm run seed:validate && npm run test && npm run test:rules && npm run env:check && vite build"
   },
   "dependencies": {
     "firebase": "12.16.0",
@@ -47,8 +55,10 @@
   },
   "allowScripts": {
     "@firebase/util@1.15.1": true,
+    "esbuild@0.28.1": true,
     "fsevents@2.3.3": true,
     "protobufjs@7.6.5": true,
-    "re2@1.26.1": true
+    "re2@1.26.1": true,
+    "workerd@1.20260722.1": true
   }
 }

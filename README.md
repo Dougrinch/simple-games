@@ -9,7 +9,7 @@
 между устройствами и восстанавливается после перезагрузки. Локальная копия
 используется только для просмотра при временном отсутствии сети.
 
-Production URL: <https://dougrinch.github.io/simple-games/>.
+Production URL: <https://dougrinch.com/simple-games/>.
 
 ## Локальный запуск
 
@@ -32,6 +32,14 @@ npm run emulators:seed
 
 # Терминал 3
 npm run dev
+```
+
+Для локальной проверки push дополнительно скопируйте
+`push-worker/.dev.vars.example` в `push-worker/.dev.vars`, заполните
+`VAPID_PRIVATE_KEY` и запустите:
+
+```bash
+npm run push:dev
 ```
 
 - приложение: <http://localhost:5173>
@@ -67,6 +75,7 @@ npm run typecheck
 npm run seed:validate
 npm test
 npm run test:rules
+npm run push:check
 npm run test:coverage
 npm run build
 npm run check
@@ -85,7 +94,11 @@ src/games/balda/domain.ts        чистая игровая логика
 src/games/balda/repository.ts    подписки, транзакции и синхронизация
 src/games/balda/components/      поле, клавиатура и игровой экран
 src/platform/firebase/           инициализация Firebase
+src/platform/push/               подписка браузера и вызов Push Worker
+src/features/push/               пользовательский контрол уведомлений
 src/platform/games/              реестр типов игр
+push-worker/                     Cloudflare Worker и Workerd-тесты
+public/sw.js                     приём и открытие Web Push
 tests/rules/                     Emulator-тесты доступа и транзакций
 firebase-data/seed.json          schemaVersion и 1554 стартовых слова
 ```
@@ -113,9 +126,10 @@ UI не обращается к Firebase напрямую. Создание вы
 
 ## Firebase и публикация
 
-Production-переменные находятся в `.env.local` и GitHub Actions Repository
-Variables. `.env.local` исключён из Git. Пошаговая настройка сторонних сервисов
-описана в [docs/external-services.md](docs/external-services.md).
+Production-переменные, включая `VITE_PUSH_WORKER_URL`, находятся в `.env.local`
+и GitHub Actions Repository Variables. `.env.local` исключён из Git. Пошаговая
+настройка сторонних сервисов описана в
+[docs/external-services.md](docs/external-services.md).
 
 Отдельная инструкция по бесплатным системным push-уведомлениям через Cloudflare
 Workers находится в

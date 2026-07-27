@@ -1,0 +1,22 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "simple-games-push",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "APP_URL": "https://dougrinch.com/simple-games/",
+    "ALLOWED_ORIGINS": "https://dougrinch.com,https://dougrinch.github.io,http://localhost:5173",
+    "FIREBASE_API_KEY": "AIzaSyCPZdXRvKh5ciyoyQT8qb_cRkvAJyGmQQE",
+    "FIREBASE_DATABASE_URL": "https://simple-games-4c88c-default-rtdb.europe-west1.firebasedatabase.app/",
+    "VAPID_PUBLIC_KEY": "BHS3T-4zJYjt_nkxSo9qoDUDuBYnJCEyrAbv-oVvWBy8qyx7V_m-4mKDu6yfiYvlUohTT8ocxjlwEhZ7thghH4c",
+    "VAPID_SUBJECT": "https://dougrinch.com/simple-games/"
+  },
+  "secrets": {
+    "required": ["VAPID_PRIVATE_KEY"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

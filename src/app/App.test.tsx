@@ -30,6 +30,12 @@ const repositoryMocks = vi.hoisted(() => ({
   resync: vi.fn(),
 }))
 
+const pushMocks = vi.hoisted(() => ({
+  getStatus: vi.fn(),
+  enable: vi.fn(),
+  notifyOtherPlayer: vi.fn(),
+}))
+
 vi.mock('../features/auth/authService', () => ({
   subscribeAuthSession: (listener: (session: AuthSession) => void) => {
     authMocks.listener = listener
@@ -71,6 +77,17 @@ vi.mock('../games/balda/repository', async (importOriginal) => {
   return { ...actual, BaldaRepository: MockBaldaRepository }
 })
 
+vi.mock('../platform/push/pushClient', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../platform/push/pushClient')>()
+  return {
+    ...actual,
+    getPushNotificationStatus: pushMocks.getStatus,
+    enablePushNotifications: pushMocks.enable,
+    notifyOtherPlayer: pushMocks.notifyOtherPlayer,
+  }
+})
+
 const authorizedUser = {
   uid: 'uid-grinch131',
   email: 'grinch131@gmail.com',
@@ -105,6 +122,10 @@ describe('App states and orchestration', () => {
     repositoryMocks.submitMove.mockReset()
     repositoryMocks.rollbackLastMove.mockReset()
     repositoryMocks.resync.mockReset()
+    pushMocks.getStatus.mockReset().mockResolvedValue('prompt')
+    pushMocks.enable.mockReset().mockResolvedValue(undefined)
+    pushMocks.notifyOtherPlayer.mockReset().mockResolvedValue(undefined)
+    Reflect.deleteProperty(document, 'elementFromPoint')
   })
 
   it('keeps game data hidden while authentication is loading', () => {
@@ -405,6 +426,89 @@ describe('App states and orchestration', () => {
     expect(
       screen.getByRole('dialog', { name: 'Выбор буквы' }),
     ).toBeInTheDocument()
+  })
+
+  it('notifies the other player only after a move is confirmed', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    const initialGame = createInitialGame(
+      'game-1',
+      'БЕРЕГ',
+      'grinch131',
+      1,
+    )
+    const moved = applyMove(
+      initialGame,
+      'grinch131',
+      {
+        expectedRevision: 0,
+        cell: '1_0',
+        letter: 'А',
+        path: ['1_0', '2_0', '2_1'],
+      },
+      2,
+    )
+    if (!moved.ok) {
+      throw new Error(moved.message)
+    }
+    repositoryMocks.session = session({ game: initialGame })
+    repositoryMocks.submitMove.mockResolvedValue(moved.value)
+    render(<App />)
+
+    await user.click(
+      screen.getByRole('gridcell', { name: 'Пустая клетка 1, 0' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Буква А' }))
+
+    const board = screen.getByRole('grid', {
+      name: 'Игровое поле 5 на 5',
+    })
+    const draftCell = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А, черновик',
+    })
+    const firstStartCell = screen.getByRole('gridcell', {
+      name: 'Клетка 2, 0, буква Б',
+    })
+    const secondStartCell = screen.getByRole('gridcell', {
+      name: 'Клетка 2, 1, буква Е',
+    })
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi
+        .fn()
+        .mockReturnValueOnce(firstStartCell)
+        .mockReturnValue(secondStartCell),
+    })
+
+    fireEvent.pointerDown(draftCell, {
+      pointerId: 4,
+      clientX: 20,
+      clientY: 80,
+    })
+    fireEvent.pointerMove(board, {
+      pointerId: 4,
+      clientX: 50,
+      clientY: 150,
+    })
+    fireEvent.pointerMove(board, {
+      pointerId: 4,
+      clientX: 150,
+      clientY: 150,
+    })
+    fireEvent.pointerUp(board, {
+      pointerId: 4,
+      clientX: 150,
+      clientY: 150,
+    })
+
+    await vi.waitFor(() => {
+      expect(repositoryMocks.submitMove).toHaveBeenCalledOnce()
+      expect(pushMocks.notifyOtherPlayer).toHaveBeenCalledOnce()
+    })
   })
 
   it('resynchronizes silently when rollback is no longer available', async () => {

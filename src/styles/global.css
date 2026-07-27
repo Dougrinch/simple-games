@@ -268,6 +268,57 @@ button:disabled {
   gap: 10px;
 }
 
+.push-notification-control {
+  display: grid;
+  width: 100%;
+  margin: 12px 0;
+  gap: 8px;
+}
+
+.push-notification-control p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.push-notification-control p[role="alert"] {
+  color: #ffd7d1;
+}
+
+.push-notification-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid rgb(246 202 91 / 30%);
+  border-radius: 14px;
+  color: #f9e8b9;
+  background: rgb(246 202 91 / 8%);
+  cursor: pointer;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.push-notification-button.is-enabled {
+  border-color: rgb(113 217 154 / 30%);
+  color: #bff5d3;
+  background: rgb(113 217 154 / 9%);
+  opacity: 1;
+}
+
+.state-card > .push-notification-control {
+  margin-top: 16px;
+  margin-bottom: 2px;
+}
+
+.game-page > .push-notification-control {
+  margin-top: 0;
+}
+
 .score-card {
   display: flex;
   min-width: 0;

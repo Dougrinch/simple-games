@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
@@ -25,6 +25,7 @@ interface GameScreenProps {
   online: boolean
   synchronized: boolean
   pending: boolean
+  notificationControl?: ReactNode
   draft: LocalDraft | null
   keyboardOpen: boolean
   onOpenKeyboard: (cell: CellKey) => void
@@ -50,6 +51,7 @@ export function GameScreen({
   online,
   synchronized,
   pending,
+  notificationControl,
   draft,
   keyboardOpen,
   onOpenKeyboard,
@@ -114,6 +116,8 @@ export function GameScreen({
           )
         })}
       </section>
+
+      {notificationControl}
 
       <section className="game-status" aria-live="polite">
         {game.status === 'active' ? (

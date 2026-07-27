@@ -10,6 +10,28 @@
 - стандартный Web Push;
 - Service Worker в браузере.
 
+## Статус реализации
+
+Клиент, PWA-файлы и Worker уже находятся в репозитории:
+
+```text
+src/features/push/PushNotificationsControl.tsx
+src/platform/push/pushClient.ts
+public/manifest.webmanifest
+public/sw.js
+push-worker/
+```
+
+Автоматические проверки:
+
+```bash
+npm run push:check
+```
+
+Production VAPID public key хранится в `push-worker/wrangler.jsonc`, а private
+key — только в Cloudflare Secret `VAPID_PRIVATE_KEY`. После изменения
+конфигурации Worker нужно повторно опубликовать по разделу 12.
+
 ## 1. Схема
 
 ```text
@@ -101,31 +123,13 @@ pushSubscriptions/
 Текущие Realtime Database Rules уже разрешают обоим доверенным игрокам читать и
 писать базу, поэтому для первой версии правила менять не требуется.
 
-## 4. Создать Cloudflare Worker
+## 4. Cloudflare Worker
 
-Создать бесплатный Cloudflare-аккаунт без банковской карты. Из корня
-репозитория:
-
-```bash
-npm create cloudflare@latest -- push-worker
-```
-
-В мастере выбрать:
-
-```text
-Hello World example
-Worker only
-TypeScript
-Git: No
-Deploy: No
-```
-
-Установить Web Push:
+Worker реализован как npm workspace в `push-worker/`. Зависимости ставятся
+общей командой `npm ci` из корня репозитория. Для первого production-деплоя
+нужно авторизовать Wrangler:
 
 ```bash
-cd push-worker
-npm install web-push
-npm install --save-dev @types/web-push
 npx wrangler login
 ```
 
@@ -160,18 +164,18 @@ Public key можно хранить в конфигурации. Private key н
 
 ```jsonc
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
+  "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "simple-games-push",
   "main": "src/index.ts",
-  "compatibility_date": "2026-07-26",
+  "compatibility_date": "2026-07-27",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "APP_URL": "https://dougrinch.github.io/simple-games/",
-    "ALLOWED_ORIGINS": "https://dougrinch.github.io,http://localhost:5173",
+    "APP_URL": "https://dougrinch.com/simple-games/",
+    "ALLOWED_ORIGINS": "https://dougrinch.com,https://dougrinch.github.io,http://localhost:5173",
     "FIREBASE_API_KEY": "<VITE_FIREBASE_API_KEY>",
     "FIREBASE_DATABASE_URL": "<VITE_FIREBASE_DATABASE_URL>",
     "VAPID_PUBLIC_KEY": "<publicKey>",
-    "VAPID_SUBJECT": "mailto:<контактный-email>"
+    "VAPID_SUBJECT": "https://dougrinch.com/simple-games/"
   },
   "secrets": {
     "required": ["VAPID_PRIVATE_KEY"]
@@ -286,15 +290,19 @@ VAPID:
 ```ts
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  env.VAPID_SUBJECT,
-  env.VAPID_PUBLIC_KEY,
-  env.VAPID_PRIVATE_KEY,
-)
+await webpush.sendNotification(subscription, payload, {
+  vapidDetails: {
+    subject: env.VAPID_SUBJECT,
+    publicKey: env.VAPID_PUBLIC_KEY,
+    privateKey: env.VAPID_PRIVATE_KEY,
+  },
+  TTL: 60 * 60,
+  urgency: 'high',
+})
 ```
 
-Worker вызывает `webpush.sendNotification(subscription, payload)` для каждого
-устройства получателя.
+Worker запускает доставку через `ctx.waitUntil()`, поэтому API сразу отвечает
+`202`, а отправка на все устройства получателя завершается в фоне.
 
 В первой версии ответы `404` и `410` можно только записывать в структурированный
 лог. Позже можно автоматически удалять устаревшие подписки.
@@ -582,8 +590,7 @@ void notifyOtherPlayer().catch((error: unknown) => {
 Локальный Worker:
 
 ```bash
-cd push-worker
-npx wrangler dev
+npm run push:dev
 ```
 
 Проверить public key:
@@ -595,7 +602,7 @@ curl http://localhost:8787/vapid-public-key
 Деплой:
 
 ```bash
-npx wrangler deploy
+npm run deploy --workspace push-worker
 ```
 
 Полученный URL записать в:
@@ -617,7 +624,7 @@ npx wrangler deploy
 Production-логи:
 
 ```bash
-npx wrangler tail
+npx wrangler tail --config push-worker/wrangler.jsonc
 ```
 
 Не логировать Firebase ID token, VAPID private key или полный push endpoint.

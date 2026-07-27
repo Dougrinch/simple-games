@@ -15,6 +15,7 @@ const requiredVariables = [
   'VITE_FIREBASE_MESSAGING_SENDER_ID',
   'VITE_FIREBASE_APP_ID',
   'VITE_BASE_PATH',
+  'VITE_PUSH_WORKER_URL',
 ]
 
 const missingVariables = requiredVariables.filter(
@@ -33,5 +34,17 @@ if (missingVariables.length > 0) {
   console.error('VITE_BASE_PATH must start and end with "/".')
   process.exitCode = 1
 } else {
-  console.log(`Environment variables for "${mode}" mode are configured.`)
+  try {
+    const pushWorkerUrl = new URL(env.VITE_PUSH_WORKER_URL)
+    if (
+      pushWorkerUrl.protocol !== 'https:' &&
+      pushWorkerUrl.protocol !== 'http:'
+    ) {
+      throw new Error('unsupported protocol')
+    }
+    console.log(`Environment variables for "${mode}" mode are configured.`)
+  } catch {
+    console.error('VITE_PUSH_WORKER_URL must be a valid HTTP(S) URL.')
+    process.exitCode = 1
+  }
 }

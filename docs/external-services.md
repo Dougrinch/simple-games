@@ -58,7 +58,8 @@ Firebase auth helper работает на другом домене (`firebasea
 3. Выберите email поддержки проекта и сохраните настройку.
 4. Убедитесь, что в `Authentication → Settings → Authorized domains` есть:
    - `localhost`;
-   - `dougrinch.github.io`.
+   - `dougrinch.com`;
+   - `dougrinch.github.io` как резервный GitHub Pages domain.
 
 Добавляется только домен, без протокола и без пути `/simple-games/`. Домен
 `firebaseapp.com` проекта Firebase обычно добавлен автоматически.
@@ -156,12 +157,13 @@ Workflow устанавливает зависимости через lock-фа�
 
 Ожидаемый URL:
 
-<https://dougrinch.github.io/simple-games/>
+<https://dougrinch.com/simple-games/>
 
 ## 3. Проверка готовности сторонних сервисов
 
 - Google provider включён.
-- `localhost` и `dougrinch.github.io` находятся в Authorized domains.
+- `localhost`, `dougrinch.com` и `dougrinch.github.io` находятся в Authorized
+  domains.
 - Realtime Database создана не в test mode.
 - Rules развёрнуты из `database.rules.json`.
 - `meta/schemaVersion` равен `1`.
