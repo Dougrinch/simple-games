@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
@@ -34,6 +34,7 @@ interface GameScreenProps {
   onClearDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
   onRollback: () => void
+  onResign: () => void
   onCreateGame: () => void
 }
 
@@ -60,6 +61,7 @@ export function GameScreen({
   onClearDraft,
   onSubmitMove,
   onRollback,
+  onResign,
   onCreateGame,
 }: GameScreenProps) {
   const isActive = game.status === 'active'
@@ -68,6 +70,7 @@ export function GameScreen({
   const [highlightedWord, setHighlightedWord] = useState<string | null>(
     game.moves?.[String(game.moveCount)]?.word ?? null,
   )
+  const [resignationOpen, setResignationOpen] = useState(false)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
   )
@@ -81,6 +84,10 @@ export function GameScreen({
     lastMove?.authorPlayerId === playerId
       ? 'ГАААААЛЯ!!'
       : 'низя!'
+
+  useEffect(() => {
+    setResignationOpen(false)
+  }, [game.id, game.status])
 
   return (
     <main className="game-page">
@@ -146,14 +153,18 @@ export function GameScreen({
           <div className="final-result">
             <span className="turn-pill">Финиш</span>
             <p>
-              {game.result?.isDraw
-                ? 'Ничья. Красиво разошлись.'
-                : game.result?.winnerPlayerId === playerId
-                  ? 'Ты победил!'
-                  : `Победил ${playerName(
-                      game.result?.winnerPlayerId ?? game.playerIds[0],
-                      profiles,
-                    )}`}
+              {game.result?.completionReason === 'resignation'
+                ? game.result.resignedByPlayerId === playerId
+                  ? 'Поражение. Ты сдался.'
+                  : 'Победа! Вражина сдалась.'
+                : game.result?.isDraw
+                  ? 'Ничья. Красиво разошлись.'
+                  : game.result?.winnerPlayerId === playerId
+                    ? 'Ты победил!'
+                    : `Победил ${playerName(
+                        game.result?.winnerPlayerId ?? game.playerIds[0],
+                        profiles,
+                      )}`}
             </p>
           </div>
         )}
@@ -249,6 +260,49 @@ export function GameScreen({
             </ol>
           </div>
         </section>
+      )}
+
+      {game.status === 'active' && (
+        <button
+          className="danger-button surrender-button"
+          type="button"
+          disabled={!online || !synchronized || pending}
+          onClick={() => setResignationOpen(true)}
+        >
+          Сдаться
+        </button>
+      )}
+
+      {game.status === 'active' && resignationOpen && (
+        <div className="confirmation-backdrop">
+          <section
+            className="confirmation-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resignation-title"
+          >
+            <h2 id="resignation-title">Точно сдаёшься?</h2>
+            <div className="confirmation-actions">
+              <button
+                className="danger-button"
+                type="button"
+                disabled={!online || !synchronized || pending}
+                onClick={onResign}
+              >
+                Сдаюся
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={pending}
+                autoFocus
+                onClick={() => setResignationOpen(false)}
+              >
+                Ну уж нет!
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       <RussianKeyboard

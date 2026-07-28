@@ -4,7 +4,11 @@ import type { User } from 'firebase/auth'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuthSession } from '../features/auth/authService'
-import { applyMove, createInitialGame } from '../games/balda/domain'
+import {
+  applyMove,
+  createInitialGame,
+  resignGame,
+} from '../games/balda/domain'
 import {
   RepositoryError,
   type BaldaSession,
@@ -27,6 +31,7 @@ const repositoryMocks = vi.hoisted(() => ({
   createGame: vi.fn(),
   submitMove: vi.fn(),
   rollbackLastMove: vi.fn(),
+  resignGame: vi.fn(),
   resync: vi.fn(),
 }))
 
@@ -71,6 +76,7 @@ vi.mock('../games/balda/repository', async (importOriginal) => {
     createGame = repositoryMocks.createGame
     submitMove = repositoryMocks.submitMove
     rollbackLastMove = repositoryMocks.rollbackLastMove
+    resignGame = repositoryMocks.resignGame
     resync = repositoryMocks.resync
   }
 
@@ -121,6 +127,7 @@ describe('App states and orchestration', () => {
     repositoryMocks.createGame.mockReset()
     repositoryMocks.submitMove.mockReset()
     repositoryMocks.rollbackLastMove.mockReset()
+    repositoryMocks.resignGame.mockReset()
     repositoryMocks.resync.mockReset()
     pushMocks.getStatus.mockReset().mockResolvedValue('prompt')
     pushMocks.enable.mockReset().mockResolvedValue(undefined)
@@ -508,6 +515,86 @@ describe('App states and orchestration', () => {
     await vi.waitFor(() => {
       expect(repositoryMocks.submitMove).toHaveBeenCalledOnce()
       expect(pushMocks.notifyOtherPlayer).toHaveBeenCalledOnce()
+    })
+  })
+
+  it('confirms and submits a resignation with the current revision', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    const initialGame = createInitialGame(
+      'game-1',
+      'БЕРЕГ',
+      'hinhillaa',
+      1,
+    )
+    const resigned = resignGame(
+      initialGame,
+      'grinch131',
+      { expectedRevision: 0 },
+      2,
+    )
+    if (!resigned.ok) {
+      throw new Error(resigned.message)
+    }
+    repositoryMocks.session = session({ game: initialGame })
+    repositoryMocks.resignGame.mockResolvedValue(resigned.value)
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Сдаться' }))
+    await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
+
+    await vi.waitFor(() => {
+      expect(repositoryMocks.resignGame).toHaveBeenCalledWith(
+        'game-1',
+        'grinch131',
+        { expectedRevision: 0 },
+      )
+      expect(
+        screen.getByText('Поражение. Ты сдался.'),
+      ).toBeInTheDocument()
+    })
+    expect(pushMocks.notifyOtherPlayer).not.toHaveBeenCalled()
+  })
+
+  it('resynchronizes when a resignation loses a revision race', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    const initialGame = createInitialGame(
+      'game-1',
+      'БЕРЕГ',
+      'grinch131',
+      1,
+    )
+    repositoryMocks.session = session({ game: initialGame })
+    repositoryMocks.resignGame.mockRejectedValue(
+      new RepositoryError(
+        'Все сломалось, повтори!',
+        'conflict',
+        {
+          ok: false,
+          code: 'revision-changed',
+          message: 'Все сломалось, повтори!',
+        },
+      ),
+    )
+    repositoryMocks.resync.mockResolvedValue(
+      session({ game: initialGame }),
+    )
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Сдаться' }))
+    await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
+
+    await vi.waitFor(() => {
+      expect(repositoryMocks.resync).toHaveBeenCalledOnce()
     })
   })
 

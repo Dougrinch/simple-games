@@ -716,6 +716,53 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
+.surrender-button {
+  margin-top: 28px;
+}
+
+.confirmation-backdrop {
+  display: grid;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  background: rgb(3 10 6 / 70%);
+  backdrop-filter: blur(6px);
+  place-items: center;
+}
+
+.confirmation-dialog {
+  width: min(100%, 340px);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+.confirmation-dialog h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.confirmation-actions {
+  display: grid;
+  margin-top: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.confirmation-actions .danger-button,
+.confirmation-actions .secondary-button {
+  width: 100%;
+}
+
 .offline-banner {
   display: flex;
   width: min(calc(100% - 24px), 420px);

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyMove, createInitialGame, rollbackLastMove } from './domain'
+import {
+  applyMove,
+  createInitialGame,
+  resignGame,
+  rollbackLastMove,
+} from './domain'
 import { GameDataError, parseBaldaGame } from './parser'
 import {
   completeNearlyCompletedGame,
@@ -47,6 +52,31 @@ describe('parseBaldaGame', () => {
     expect(parsed.status).toBe('completed')
     expect(parsed.result?.isDraw).toBe(true)
     expect(parsed.result?.winnerPlayerId).toBeNull()
+    expect(parsed.result?.completionReason).toBe('board-full')
+    expect(parsed.result?.resignedByPlayerId).toBeNull()
+  })
+
+  it('accepts a consistent resignation result on a partial board', () => {
+    const resigned = resignGame(
+      createInitialGame('game-1', 'БЕРЕГ', 'grinch131', 1),
+      'grinch131',
+      { expectedRevision: 0 },
+      2,
+    )
+    if (!resigned.ok) {
+      throw new Error(resigned.message)
+    }
+
+    expect(parseBaldaGame(resigned.value)).toEqual(resigned.value)
+
+    const inconsistent = structuredClone(
+      resigned.value,
+    ) as unknown as Record<string, unknown>
+    const result = inconsistent.result as Record<string, unknown>
+    result.winnerPlayerId = 'grinch131'
+    expect(() => parseBaldaGame(inconsistent)).toThrow(
+      'The stored resignation result is inconsistent.',
+    )
   })
 
   it('keeps legacy games safe when the rollback marker is absent', () => {

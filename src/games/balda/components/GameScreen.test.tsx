@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { applyMove, createInitialGame, rollbackLastMove } from '../domain'
+import {
+  applyMove,
+  createInitialGame,
+  resignGame,
+  rollbackLastMove,
+} from '../domain'
 import {
   completeNearlyCompletedGame,
   makeNearlyCompletedGame,
@@ -103,6 +108,7 @@ function gameScreenProps(
     onClearDraft: vi.fn(),
     onSubmitMove: vi.fn(),
     onRollback: vi.fn(),
+    onResign: vi.fn(),
     onCreateGame: vi.fn(),
     ...overrides,
   }
@@ -130,6 +136,7 @@ describe('GameScreen', () => {
         onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
+        onResign={vi.fn()}
         onCreateGame={vi.fn()}
       />,
     )
@@ -166,6 +173,7 @@ describe('GameScreen', () => {
         onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
+        onResign={vi.fn()}
         onCreateGame={vi.fn()}
       />,
     )
@@ -201,6 +209,7 @@ describe('GameScreen', () => {
         onClearDraft={vi.fn()}
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
+        onResign={vi.fn()}
         onCreateGame={vi.fn()}
       />,
     )
@@ -507,6 +516,106 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'Новая игра' }),
     ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Сдаться' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('places surrender after move history and allows it regardless of turn', () => {
+    const moved = movedGame()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: moved,
+          playerId: 'grinch131',
+        })}
+      />,
+    )
+
+    const history = screen.getByRole('region', { name: 'История ходов' })
+    const surrender = screen.getByRole('button', { name: 'Сдаться' })
+
+    expect(history.nextElementSibling).toBe(surrender)
+    expect(surrender).toBeEnabled()
+  })
+
+  it('allows surrender before the first move and requires confirmation', async () => {
+    const user = userEvent.setup()
+    const onResign = vi.fn()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          playerId: 'hinhillaa',
+          onResign,
+        })}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Сдаться' }))
+    const dialog = screen.getByRole('dialog', {
+      name: 'Точно сдаёшься?',
+    })
+    expect(dialog).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Ну уж нет!' }),
+    )
+    expect(onResign).not.toHaveBeenCalled()
+    expect(
+      screen.queryByRole('dialog', { name: 'Точно сдаёшься?' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Сдаться' }))
+    await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
+    expect(onResign).toHaveBeenCalledOnce()
+  })
+
+  it('disables surrender while the game cannot mutate', () => {
+    const { rerender } = render(
+      <GameScreen
+        {...gameScreenProps({
+          online: false,
+          synchronized: false,
+        })}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Сдаться' })).toBeDisabled()
+
+    rerender(<GameScreen {...gameScreenProps({ pending: true })} />)
+    expect(screen.getByRole('button', { name: 'Сдаться' })).toBeDisabled()
+  })
+
+  it('explains a resignation to both players', () => {
+    const resigned = resignGame(
+      game(),
+      'grinch131',
+      { expectedRevision: 0 },
+      2,
+    )
+    if (!resigned.ok) {
+      throw new Error(resigned.message)
+    }
+
+    const { rerender } = render(
+      <GameScreen
+        {...gameScreenProps({
+          game: resigned.value,
+          playerId: 'grinch131',
+        })}
+      />,
+    )
+    expect(screen.getByText('Поражение. Ты сдался.')).toBeInTheDocument()
+
+    rerender(
+      <GameScreen
+        {...gameScreenProps({
+          game: resigned.value,
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+    expect(screen.getByText('Победа! Вражина сдалась.')).toBeInTheDocument()
   })
 
   it('validates and submits a complete move immediately on pointer release', () => {

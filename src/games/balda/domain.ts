@@ -11,6 +11,7 @@ import {
   type GameResult,
   type MoveDraft,
   type PlayerId,
+  type ResignationRequest,
   type RollbackRequest,
   type RowIndex,
 } from './types'
@@ -75,6 +76,7 @@ const FAILURE_MESSAGES: Record<DomainFailure['code'], string> = {
   'word-already-used': 'Это слово уже было.',
   'rollback-unavailable': 'Этот ход уже нельзя отменить.',
   'rollback-forbidden': 'Этот ход отменить нельзя.',
+  'resignation-unavailable': 'Эта партия уже завершена.',
 }
 
 function failure(code: DomainFailure['code']): DomainFailure {
@@ -292,6 +294,8 @@ export function determineResult(
         : secondPlayer,
     isDraw,
     scores: { ...scores },
+    completionReason: 'board-full',
+    resignedByPlayerId: null,
   }
 }
 
@@ -481,6 +485,40 @@ export function rollbackLastMove(
       lastWord: previousMove?.word ?? game.startWord,
       turnPlayerId: lastMove.authorPlayerId,
       revision: game.revision + 1,
+    },
+  }
+}
+
+export function resignGame(
+  game: BaldaGame,
+  playerId: PlayerId,
+  request: ResignationRequest,
+  completedAt: number,
+): DomainResult<BaldaGame> {
+  if (game.status !== 'active') {
+    return failure('resignation-unavailable')
+  }
+
+  if (game.revision !== request.expectedRevision) {
+    return failure('revision-changed')
+  }
+
+  return {
+    ok: true,
+    value: {
+      ...game,
+      status: 'completed',
+      completedAt,
+      revision: game.revision + 1,
+      turnPlayerId: null,
+      rollbackTargetMoveNumber: null,
+      result: {
+        winnerPlayerId: otherPlayer(playerId),
+        isDraw: false,
+        scores: { ...game.scores },
+        completionReason: 'resignation',
+        resignedByPlayerId: playerId,
+      },
     },
   }
 }

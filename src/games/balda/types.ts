@@ -34,6 +34,8 @@ export interface GameResult {
   winnerPlayerId: PlayerId | null
   isDraw: boolean
   scores: Record<PlayerId, number>
+  completionReason: 'board-full' | 'resignation'
+  resignedByPlayerId: PlayerId | null
 }
 
 export interface BaldaGame {
@@ -70,6 +72,10 @@ export interface RollbackRequest {
   expectedAuthorPlayerId: PlayerId
 }
 
+export interface ResignationRequest {
+  expectedRevision: number
+}
+
 export type MoveValidationCode =
   | 'game-completed'
   | 'not-your-turn'
@@ -88,6 +94,7 @@ export type MoveValidationCode =
   | 'word-already-used'
   | 'rollback-unavailable'
   | 'rollback-forbidden'
+  | 'resignation-unavailable'
 
 export interface DomainFailure {
   ok: false

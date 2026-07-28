@@ -459,6 +459,88 @@ describe('BaldaRepository transactions', () => {
     }
   })
 
+  it('saves a resignation atomically without changing the played state', async () => {
+    const connection = await connectedRepository('grinch131')
+
+    try {
+      const created = await connection.repository.createGame()
+      const resigned = await connection.repository.resignGame(
+        created.id,
+        'hinhillaa',
+        { expectedRevision: created.revision },
+      )
+
+      expect(resigned.status).toBe('completed')
+      expect(resigned.completedAt).toEqual(expect.any(Number))
+      expect(resigned.revision).toBe(created.revision + 1)
+      expect(resigned.turnPlayerId).toBeNull()
+      expect(resigned.board).toEqual(created.board)
+      expect(resigned.moves).toEqual(created.moves)
+      expect(resigned.scores).toEqual(created.scores)
+      expect(resigned.result).toEqual({
+        winnerPlayerId: 'grinch131',
+        isDraw: false,
+        scores: created.scores,
+        completionReason: 'resignation',
+        resignedByPlayerId: 'hinhillaa',
+      })
+      const stored = await readCurrentGame(connection.database)
+      expect(stored.completedAt).toEqual(expect.any(Number))
+      expect(stored).toEqual({
+        ...resigned,
+        completedAt: stored.completedAt,
+      })
+    } finally {
+      connection.unsubscribe()
+    }
+  })
+
+  it('commits only one of a concurrent move and resignation', async () => {
+    const first = await connectedRepository('grinch131')
+    const second = await connectedRepository('hinhillaa')
+
+    try {
+      const created = await first.repository.createGame()
+      await second.repository.resync()
+      const turnPlayerId = created.turnPlayerId as PlayerId
+      const moveRepository =
+        turnPlayerId === 'grinch131'
+          ? first.repository
+          : second.repository
+      const resigningPlayerId: PlayerId =
+        turnPlayerId === 'grinch131' ? 'hinhillaa' : 'grinch131'
+      const resignRepository =
+        resigningPlayerId === 'grinch131'
+          ? first.repository
+          : second.repository
+
+      const results = await Promise.allSettled([
+        moveRepository.submitMove(created.id, turnPlayerId, {
+          expectedRevision: created.revision,
+          cell: '1_0',
+          letter: 'А',
+          path: ['1_0', '2_0', '2_1'],
+        }),
+        resignRepository.resignGame(
+          created.id,
+          resigningPlayerId,
+          { expectedRevision: created.revision },
+        ),
+      ])
+
+      expect(
+        results.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(1)
+      expect(
+        results.filter((result) => result.status === 'rejected'),
+      ).toHaveLength(1)
+      expect((await readCurrentGame(first.database)).revision).toBe(1)
+    } finally {
+      first.unsubscribe()
+      second.unsubscribe()
+    }
+  })
+
   it('keeps a completed game immutable through repository operations and preserves it when creating the next game', async () => {
     const connection = await connectedRepository('grinch131')
 
@@ -482,6 +564,13 @@ describe('BaldaRepository transactions', () => {
             letter: 'А',
             path: ['0_0', '0_1'],
           },
+        ),
+      ).rejects.toMatchObject({ kind: 'conflict' })
+      await expect(
+        connection.repository.resignGame(
+          completed.id,
+          'grinch131',
+          { expectedRevision: completed.revision },
         ),
       ).rejects.toMatchObject({ kind: 'conflict' })
 

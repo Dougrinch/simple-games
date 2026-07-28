@@ -251,10 +251,35 @@ function parseResult(value: unknown): GameResult {
     throw new GameDataError('result.winnerPlayerId is invalid.')
   }
 
+  const completionReason =
+    input.completionReason === undefined
+      ? 'board-full'
+      : input.completionReason
+  if (
+    completionReason !== 'board-full' &&
+    completionReason !== 'resignation'
+  ) {
+    throw new GameDataError('result.completionReason is invalid.')
+  }
+
+  const resignedByPlayerId =
+    input.resignedByPlayerId === undefined ||
+    input.resignedByPlayerId === null
+      ? null
+      : input.resignedByPlayerId
+  if (
+    resignedByPlayerId !== null &&
+    !isPlayerId(resignedByPlayerId)
+  ) {
+    throw new GameDataError('result.resignedByPlayerId is invalid.')
+  }
+
   return {
     winnerPlayerId: winner,
     isDraw,
     scores: parseScores(input.scores),
+    completionReason,
+    resignedByPlayerId,
   }
 }
 
@@ -367,8 +392,8 @@ function validateConsistency(game: BaldaGame): void {
   }
 
   if (game.status === 'completed') {
-    if (Object.keys(game.board).length !== 25 || !game.result) {
-      throw new GameDataError('A completed game must have a full board.')
+    if (!game.result) {
+      throw new GameDataError('A completed game must have a result.')
     }
     if (
       game.result.scores.grinch131 !== game.scores.grinch131 ||
@@ -376,17 +401,41 @@ function validateConsistency(game: BaldaGame): void {
     ) {
       throw new GameDataError('Result scores do not match game scores.')
     }
-    const isDraw = game.scores.grinch131 === game.scores.hinhillaa
-    const expectedWinner = isDraw
-      ? null
-      : game.scores.grinch131 > game.scores.hinhillaa
-        ? 'grinch131'
-        : 'hinhillaa'
+
+    if (game.result.completionReason === 'board-full') {
+      if (
+        Object.keys(game.board).length !== 25 ||
+        game.result.resignedByPlayerId !== null
+      ) {
+        throw new GameDataError(
+          'A board-full result requires a full board.',
+        )
+      }
+      const isDraw = game.scores.grinch131 === game.scores.hinhillaa
+      const expectedWinner = isDraw
+        ? null
+        : game.scores.grinch131 > game.scores.hinhillaa
+          ? 'grinch131'
+          : 'hinhillaa'
+      if (
+        game.result.isDraw !== isDraw ||
+        game.result.winnerPlayerId !== expectedWinner
+      ) {
+        throw new GameDataError('The stored game result is inconsistent.')
+      }
+      return
+    }
+
+    const resignedByPlayerId = game.result.resignedByPlayerId
     if (
-      game.result.isDraw !== isDraw ||
-      game.result.winnerPlayerId !== expectedWinner
+      resignedByPlayerId === null ||
+      game.result.isDraw ||
+      game.result.winnerPlayerId !==
+        (resignedByPlayerId === 'grinch131'
+          ? 'hinhillaa'
+          : 'grinch131')
     ) {
-      throw new GameDataError('The stored game result is inconsistent.')
+      throw new GameDataError('The stored resignation result is inconsistent.')
     }
   }
 }

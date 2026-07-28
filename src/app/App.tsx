@@ -191,7 +191,7 @@ function AuthorizedGame({
   const [session, setSession] = useState<BaldaSession | null>(null)
   const [fatalError, setFatalError] = useState<RepositoryError | null>(null)
   const [pendingOperation, setPendingOperation] = useState<
-    'create' | 'move' | 'rollback' | null
+    'create' | 'move' | 'rollback' | 'resign' | null
   >(null)
   const [message, setMessage] = useState<string | null>(null)
   const [draft, setDraft] = useState<LocalDraft | null>(null)
@@ -391,6 +391,39 @@ function AuthorizedGame({
     }
   }
 
+  const resign = async () => {
+    const repository = repositoryRef.current
+    const game = session?.game
+    if (!repository || !game || pendingOperation) {
+      return
+    }
+
+    setPendingOperation('resign')
+    setDraft(null)
+    setKeyboardOpen(false)
+
+    try {
+      const confirmedGame = await repository.resignGame(
+        game.id,
+        playerId,
+        { expectedRevision: game.revision },
+      )
+      setSession((current) =>
+        current ? { ...current, game: confirmedGame } : current,
+      )
+    } catch (error) {
+      markOffline(error)
+      if (
+        error instanceof RepositoryError &&
+        (error.kind === 'conflict' || error.kind === 'unknown')
+      ) {
+        await resynchronize(repository)
+      }
+    } finally {
+      setPendingOperation(null)
+    }
+  }
+
   if (fatalError) {
     if (fatalError.kind === 'permission') {
       return (
@@ -509,6 +542,7 @@ function AuthorizedGame({
       }}
       onSubmitMove={(move) => void submitMove(move)}
       onRollback={() => void rollback()}
+      onResign={() => void resign()}
       onCreateGame={() => void createGame()}
     />
   )

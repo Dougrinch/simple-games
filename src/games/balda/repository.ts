@@ -15,6 +15,7 @@ import {
   applyMove,
   createInitialGame,
   isPlayerId,
+  resignGame,
   rollbackLastMove,
 } from './domain'
 import { GameDataError, parseBaldaGame } from './parser'
@@ -28,6 +29,7 @@ import type {
   DomainFailure,
   MoveDraft,
   PlayerId,
+  ResignationRequest,
   RollbackRequest,
 } from './types'
 
@@ -145,6 +147,9 @@ function serializeGameWithServerTimestamps(
     const result = rawRecord(serialized.result)
     if (result.winnerPlayerId === null) {
       delete result.winnerPlayerId
+    }
+    if (result.resignedByPlayerId === null) {
+      delete result.resignedByPlayerId
     }
   }
 
@@ -770,6 +775,91 @@ export class BaldaRepository {
       )
     } catch (error) {
       throw mapRepositoryError(error, 'Rolling back a move')
+    }
+  }
+
+  async resignGame(
+    gameId: string,
+    playerId: PlayerId,
+    request: ResignationRequest,
+  ): Promise<BaldaGame> {
+    this.requireReady()
+    let domainFailure: DomainFailure | undefined
+    let transactionError: unknown
+
+    try {
+      const gameReference = ref(
+        this.database,
+        `${ROOT_PATH}/games/${gameId}`,
+      )
+      const latestSnapshot = await get(gameReference)
+      if (!latestSnapshot.exists()) {
+        throw new GameDataError('The current game does not exist.')
+      }
+      const latestGame = parseBaldaGame(latestSnapshot.val())
+      const preflight = resignGame(
+        latestGame,
+        playerId,
+        request,
+        Date.now(),
+      )
+      if (!preflight.ok) {
+        throw new RepositoryError(
+          preflight.message,
+          'conflict',
+          preflight,
+        )
+      }
+      const initialProposal = serializeGameWithServerTimestamps(
+        preflight.value,
+      )
+
+      const transaction = await runTransaction(
+        gameReference,
+        (value: unknown) => {
+          if (value === null) {
+            return initialProposal
+          }
+          try {
+            const game = parseBaldaGame(value)
+            const result = resignGame(
+              game,
+              playerId,
+              request,
+              Date.now(),
+            )
+
+            if (!result.ok) {
+              domainFailure = result
+              return
+            }
+
+            domainFailure = undefined
+            return serializeGameWithServerTimestamps(result.value)
+          } catch (error) {
+            transactionError = error
+            return
+          }
+        },
+        { applyLocally: false },
+      )
+
+      if (!transaction.committed) {
+        if (transactionError) {
+          throw transactionError
+        }
+        throw new RepositoryError(
+          domainFailure?.message ?? 'Все сломалось, повтори!',
+          'conflict',
+          domainFailure,
+        )
+      }
+
+      return this.storeConfirmedGame(
+        parseBaldaGame(transaction.snapshot.val()),
+      )
+    } catch (error) {
+      throw mapRepositoryError(error, 'Resigning a game')
     }
   }
 }

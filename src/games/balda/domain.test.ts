@@ -12,6 +12,7 @@ import {
   isBoardFull,
   normalizeWord,
   parseCellKey,
+  resignGame,
   rollbackLastMove,
   validateMove,
 } from './domain'
@@ -234,6 +235,8 @@ describe('game transitions', () => {
       winnerPlayerId: null,
       isDraw: true,
       scores: { grinch131: 5, hinhillaa: 5 },
+      completionReason: 'board-full',
+      resignedByPlayerId: null,
     })
   })
 
@@ -264,5 +267,71 @@ describe('game transitions', () => {
     expect(result.value.completedAt).toBe(500)
     expect(result.value.turnPlayerId).toBeNull()
     expect(result.value.result?.scores).toEqual(result.value.scores)
+  })
+
+  it('allows either player to resign at any revision and awards the opponent', () => {
+    const moved = applyMove(game(), 'grinch131', validDraft(), 200)
+    if (!moved.ok) {
+      throw new Error(moved.message)
+    }
+    const before = moved.value
+    const serialized = JSON.stringify(before)
+    const result = resignGame(
+      before,
+      'grinch131',
+      { expectedRevision: 1 },
+      600,
+    )
+
+    expect(result.ok).toBe(true)
+    expect(JSON.stringify(before)).toBe(serialized)
+    if (!result.ok) {
+      return
+    }
+
+    expect(result.value.status).toBe('completed')
+    expect(result.value.completedAt).toBe(600)
+    expect(result.value.revision).toBe(2)
+    expect(result.value.turnPlayerId).toBeNull()
+    expect(result.value.rollbackTargetMoveNumber).toBeNull()
+    expect(result.value.board).toEqual(before.board)
+    expect(result.value.moves).toEqual(before.moves)
+    expect(result.value.scores).toEqual(before.scores)
+    expect(result.value.result).toEqual({
+      winnerPlayerId: 'hinhillaa',
+      isDraw: false,
+      scores: before.scores,
+      completionReason: 'resignation',
+      resignedByPlayerId: 'grinch131',
+    })
+  })
+
+  it('rejects stale and repeated resignation requests', () => {
+    expect(
+      resignGame(
+        game(),
+        'grinch131',
+        { expectedRevision: 4 },
+        600,
+      ),
+    ).toMatchObject({ ok: false, code: 'revision-changed' })
+
+    const resigned = resignGame(
+      game(),
+      'grinch131',
+      { expectedRevision: 0 },
+      600,
+    )
+    if (!resigned.ok) {
+      throw new Error(resigned.message)
+    }
+    expect(
+      resignGame(
+        resigned.value,
+        'grinch131',
+        { expectedRevision: 1 },
+        700,
+      ),
+    ).toMatchObject({ ok: false, code: 'resignation-unavailable' })
   })
 })
