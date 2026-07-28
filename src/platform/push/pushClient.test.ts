@@ -140,6 +140,7 @@ describe('push client', () => {
     expect(requestPermission).toHaveBeenCalledOnce()
     expect(navigator.serviceWorker.register).toHaveBeenCalledWith('/sw.js', {
       scope: '/',
+      updateViaCache: 'none',
     })
     expect(subscribe).toHaveBeenCalledWith({
       userVisibleOnly: true,

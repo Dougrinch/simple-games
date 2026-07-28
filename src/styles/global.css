@@ -809,6 +809,63 @@ button:disabled {
   text-align: center;
 }
 
+.app-update-backdrop {
+  display: grid;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: rgb(3 10 6 / 70%);
+  backdrop-filter: blur(6px);
+  place-items: center;
+}
+
+.app-update-dialog {
+  display: flex;
+  width: min(100%, 340px);
+  max-height: calc(100dvh - 36px);
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+  flex-direction: column;
+}
+
+.app-update-dialog h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.app-update-dialog ul {
+  display: grid;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 18px 0 0;
+  padding-right: 6px;
+  padding-left: 22px;
+  color: var(--muted);
+  line-height: 1.45;
+  gap: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-update-confirm {
+  display: flex;
+  width: auto;
+  min-width: 92px;
+  margin-top: 22px;
+  margin-left: auto;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

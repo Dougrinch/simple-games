@@ -73,6 +73,7 @@ npm run push:dev
 npm run lint
 npm run typecheck
 npm run seed:validate
+npm run release-notes:check
 npm test
 npm run test:rules
 npm run push:check
@@ -95,7 +96,10 @@ src/games/balda/repository.ts    подписки, транзакции и си�
 src/games/balda/components/      поле, клавиатура и игровой экран
 src/platform/firebase/           инициализация Firebase
 src/platform/push/               подписка браузера и вызов Push Worker
+src/platform/update/             проверка и применение новых сборок
+src/platform/serviceWorker/      общая регистрация service worker
 src/features/push/               пользовательский контрол уведомлений
+src/features/update/             попап с изменениями после обновления
 src/platform/games/              реестр типов игр
 push-worker/                     Cloudflare Worker и Workerd-тесты
 public/sw.js                     приём и открытие Web Push
@@ -145,6 +149,29 @@ npx firebase deploy --only database --project <FIREBASE_PROJECT_ID>
 нельзя. Push в `main` запускает `.github/workflows/deploy-pages.yml`, который
 проверяет проект, собирает Vite с `VITE_BASE_PATH=/simple-games/` и публикует
 `dist` через GitHub Pages.
+
+## Release notes и обновление клиента
+
+Перед каждым новым non-merge коммитом нужно добавить ровно одну запись в конец
+`release-notes.json`. Номер `id` увеличивается на один, а `text` должен быть
+одной короткой строкой не длиннее 80 символов. Для служебного изменения
+используется точный текст `Нутрянка`. Старые записи изменять или удалять нельзя.
+
+```json
+{
+  "id": 2,
+  "text": "Исправлено игровое поле"
+}
+```
+
+`npm run release-notes:check` проверяет формат файла и каждый коммит после его
+создания. Эта же проверка обязательна в pull request и перед production-деплоем.
+
+Production-сборка публикует маленький `version.json` и отдельный
+`release-notes.json`. Открытый клиент проверяет только версию раз в минуту, при
+возвращении на вкладку и после восстановления сети. Новая сборка полностью
+перезагружает страницу, проверяет фактическое изменение `sw.js` и показывает
+все ещё не подтверждённые заметки в попапе «Приложение обновлено».
 
 ## Ручная приёмка
 

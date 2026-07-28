@@ -3,6 +3,7 @@ import { ref, set } from 'firebase/database'
 
 import type { PlayerId } from '../../games/balda/types'
 import { getFirebaseServices } from '../firebase/client'
+import { registerAppServiceWorker } from '../serviceWorker/registration'
 
 const DEVICE_ID_KEY = 'balda-push-device-id'
 
@@ -163,10 +164,13 @@ export async function enablePushNotifications(
     )
   }
 
-  const registration = await navigator.serviceWorker.register(
-    `${import.meta.env.BASE_URL}sw.js`,
-    { scope: import.meta.env.BASE_URL },
-  )
+  const registration = await registerAppServiceWorker()
+  if (!registration) {
+    throw new PushClientError(
+      'Service workers are not supported.',
+      'unsupported',
+    )
+  }
   const publicKey = await readVapidPublicKey()
   const existing = await registration.pushManager.getSubscription()
   const subscription =

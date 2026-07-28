@@ -29,9 +29,12 @@ jobs:
       VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
       VITE_PUSH_WORKER_URL: ${{ vars.VITE_PUSH_WORKER_URL }}
       VITE_USE_FIREBASE_EMULATORS: "false"
+      VITE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -61,6 +64,9 @@ jobs:
 
       - name: Validate starting-word seed
         run: npm run seed:validate
+
+      - name: Validate release notes
+        run: npm run release-notes:check
 
       - name: Run unit and component tests
         run: npm test
