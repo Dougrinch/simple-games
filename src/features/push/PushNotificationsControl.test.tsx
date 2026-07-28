@@ -39,8 +39,20 @@ describe('PushNotificationsControl', () => {
 
     expect(pushMocks.enable).toHaveBeenCalledWith('grinch131')
     expect(
-      screen.getByRole('button', { name: 'Уведомления включены' }),
-    ).toBeDisabled()
+      screen.queryByRole('button', { name: 'Уведомления включены' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Включить уведомления' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('stays hidden when notifications are already enabled', async () => {
+    pushMocks.getStatus.mockResolvedValueOnce('enabled')
+    const { container } = render(
+      <PushNotificationsControl playerId="grinch131" online />,
+    )
+
+    await expect.poll(() => container).toBeEmptyDOMElement()
   })
 
   it('explains denied and unsupported browser states', async () => {

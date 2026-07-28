@@ -95,17 +95,18 @@ export function PushNotificationsControl({
     )
   }
 
+  if (status === 'enabled') {
+    return null
+  }
+
   return (
     <aside className="push-notification-control">
       <button
-        className={`push-notification-button ${
-          status === 'enabled' ? 'is-enabled' : ''
-        }`}
+        className="push-notification-button"
         type="button"
         disabled={
           status === 'checking' ||
           status === 'enabling' ||
-          status === 'enabled' ||
           !online
         }
         onClick={() => void enable()}
@@ -117,9 +118,7 @@ export function PushNotificationsControl({
           ? 'Проверяем уведомления'
           : status === 'enabling'
             ? 'Включаем уведомления'
-            : status === 'enabled'
-              ? 'Уведомления включены'
-              : 'Включить уведомления'}
+            : 'Включить уведомления'}
       </button>
       {!online && status === 'prompt' && (
         <p>Подключись к сети, чтобы включить уведомления.</p>
