@@ -737,6 +737,21 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
+.move-history-word {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+}
+
+.move-history-word:active {
+  color: var(--green);
+}
+
 .surrender-button {
   margin-top: 28px;
 }

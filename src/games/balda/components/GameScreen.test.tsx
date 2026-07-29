@@ -397,15 +397,11 @@ describe('GameScreen', () => {
         screen.queryByRole('button', { name: 'Оценить' }),
       ).not.toBeInTheDocument()
 
-      fireEvent.click(
-        screen.getByRole('gridcell', {
-          name: 'Клетка 1, 0, буква А',
-        }),
-      )
+      fireEvent.click(screen.getByRole('button', { name: 'РЕР' }))
 
       expect(
         screen.queryByRole('button', { name: 'Оценить' }),
-      ).not.toBeInTheDocument()
+      ).toBeInTheDocument()
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
@@ -445,11 +441,7 @@ describe('GameScreen', () => {
       expect(status).not.toHaveTextContent('РЕР')
       expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
 
-      fireEvent.click(
-        screen.getByRole('gridcell', {
-          name: 'Клетка 1, 0, буква А',
-        }),
-      )
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
 
       expect(status).not.toHaveTextContent('РЕР')
       expect(status).not.toHaveTextContent('АБЕ')
@@ -843,7 +835,7 @@ describe('GameBoard pointer path', () => {
     }
   })
 
-  it('highlights the word that introduced a tapped letter from in-memory moves', () => {
+  it('does not select a word when a board letter is tapped', () => {
     vi.useFakeTimers()
 
     try {
@@ -868,35 +860,10 @@ describe('GameBoard pointer path', () => {
 
       fireEvent.click(firstMoveLetter)
 
-      expect(onCellPress).not.toHaveBeenCalled()
-      expect(firstMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-      expect(secondMoveLetter).not.toHaveClass(
-        'is-last-path',
-        'is-last-letter',
-      )
+      expect(onCellPress).toHaveBeenCalledWith('1_0')
+      expect(firstMoveLetter).not.toHaveClass('is-last-path', 'is-last-letter')
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
       expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
-
-      act(() => {
-        vi.advanceTimersByTime(2_000)
-      })
-      fireEvent.click(secondMoveLetter)
-
-      expect(firstMoveLetter).not.toHaveClass(
-        'is-last-path',
-        'is-last-letter',
-      )
-      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-
-      act(() => {
-        vi.advanceTimersByTime(2_999)
-      })
-      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-
-      act(() => {
-        vi.advanceTimersByTime(1)
-      })
-      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
-      expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
