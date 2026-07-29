@@ -332,21 +332,32 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('rates the selected word and closes the popup when clicking outside', async () => {
+  it('highlights on pointer down and rates a word on its second press', async () => {
     const user = userEvent.setup()
     const onRateMove = vi.fn()
     render(
       <GameScreen
         {...gameScreenProps({
-          game: movedGame(),
+          game: twiceMovedGame(),
           playerId: 'hinhillaa',
           onRateMove,
         })}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Оценить' }))
-    expect(screen.getByRole('dialog', { name: 'Оценить слово АБЕ' })).toBeInTheDocument()
+    const word = screen.getByRole('button', { name: 'АБЕ' })
+    fireEvent.pointerDown(word, { pointerId: 1, pointerType: 'touch' })
+    expect(
+      screen.getByRole('gridcell', {
+        name: 'Клетка 1, 0, буква А',
+      }),
+    ).toHaveClass('is-last-path', 'is-last-letter')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.pointerDown(word, { pointerId: 2, pointerType: 'touch' })
+    expect(
+      screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
+    ).toBeInTheDocument()
     fireEvent.click(document.querySelector('.rating-backdrop') as HTMLElement)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(
@@ -355,8 +366,9 @@ describe('GameScreen', () => {
     expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
     expect(onRateMove).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('button', { name: 'АБЕ' }))
-    await user.click(screen.getByRole('button', { name: 'Оценить' }))
+    await user.click(word)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await user.click(word)
     await user.click(screen.getByRole('button', { name: 'Охуенно ❤️' }))
     expect(onRateMove).toHaveBeenCalledWith(1, 'great')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -378,9 +390,11 @@ describe('GameScreen', () => {
       />,
     )
 
+    fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
     expect(
       screen.queryByRole('button', { name: 'Оценить' }),
     ).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(onRateMove).not.toHaveBeenCalled()
   })
 
@@ -398,7 +412,7 @@ describe('GameScreen', () => {
       )
 
       fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
-      fireEvent.click(screen.getByRole('button', { name: 'Оценить' }))
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
       expect(
         screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
       ).toBeInTheDocument()
@@ -414,8 +428,8 @@ describe('GameScreen', () => {
         }),
       ).toHaveClass('is-last-path', 'is-last-letter')
       expect(
-        screen.getByRole('button', { name: 'Оценить' }),
-      ).toBeInTheDocument()
+        screen.queryByRole('button', { name: 'Оценить' }),
+      ).not.toBeInTheDocument()
 
       fireEvent.click(document.querySelector('.rating-backdrop') as HTMLElement)
 

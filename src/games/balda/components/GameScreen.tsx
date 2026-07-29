@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
   BaldaGame,
+  BaldaMove,
   CellKey,
   MoveDraft,
   PlayerId,
@@ -105,14 +106,15 @@ export function GameScreen({
   const selectedMove = selectedMoveNumber
     ? game.moves?.[String(selectedMoveNumber)]
     : undefined
-  const canRate = Boolean(
-    selectedMove &&
-      selectedMove.authorPlayerId !== playerId &&
-      !selectedMove.rating &&
-      online &&
-      synchronized &&
-      !pending,
-  )
+  const canRateMove = (move: BaldaMove | undefined) =>
+    Boolean(
+      move &&
+        move.authorPlayerId !== playerId &&
+        !move.rating &&
+        online &&
+        synchronized &&
+        !pending,
+    )
   const rateSelectedMove = (rating: WordRating) => {
     if (!selectedMove || selectedMove.authorPlayerId === playerId) {
       return
@@ -128,6 +130,14 @@ export function GameScreen({
       requestId: (request?.requestId ?? 0) + 1,
     }))
   }, [game.id])
+  const activateMove = (move: BaldaMove) => {
+    if (selectedMoveNumber === move.number && canRateMove(move)) {
+      setRatingOpen(true)
+      return
+    }
+
+    selectMove(move.number)
+  }
 
   useEffect(() => {
     setResignationOpen(false)
@@ -232,15 +242,6 @@ export function GameScreen({
                   ? 'Мой ход'
                   : 'Ход вражины'}
             </button>
-            {canRate && (
-              <button
-                className="secondary-button rating-button"
-                type="button"
-                onClick={() => setRatingOpen(true)}
-              >
-                Оценить
-              </button>
-            )}
             {showRollback && (
               <button
                 className="danger-button rollback-button"
@@ -357,7 +358,12 @@ export function GameScreen({
                       <button
                         className="move-history-word"
                         type="button"
-                        onClick={() => selectMove(move.number)}
+                        onPointerDown={() => activateMove(move)}
+                        onClick={(event) => {
+                          if (event.detail === 0) {
+                            activateMove(move)
+                          }
+                        }}
                       >
                         {move.word}
                         {emoji && ` ${emoji}`}
@@ -383,7 +389,12 @@ export function GameScreen({
                       <button
                         className="move-history-word"
                         type="button"
-                        onClick={() => selectMove(move.number)}
+                        onPointerDown={() => activateMove(move)}
+                        onClick={(event) => {
+                          if (event.detail === 0) {
+                            activateMove(move)
+                          }
+                        }}
                       >
                         {move.word}
                         {emoji && ` ${emoji}`}

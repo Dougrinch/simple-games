@@ -416,12 +416,6 @@ button:disabled {
   white-space: nowrap;
 }
 
-.game-status > .rating-button {
-  min-height: 38px;
-  padding: 7px 11px;
-  grid-column: 2;
-}
-
 .rating-backdrop {
   display: grid;
   position: fixed;
