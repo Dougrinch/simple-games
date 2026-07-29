@@ -341,8 +341,10 @@ export function GameScreen({
 
       {moves.length > 0 && (
         <section className="move-history" aria-label="История ходов">
-          <div className="move-history-column">
-            <h2>{playerName(game.playerIds[0], profiles)}</h2>
+          <div
+            className="move-history-column"
+            aria-label={`Ходы игрока ${playerName(game.playerIds[0], profiles)}`}
+          >
             <ol>
               {moves
                 .filter(
@@ -365,8 +367,10 @@ export function GameScreen({
                 })}
             </ol>
           </div>
-          <div className="move-history-column">
-            <h2>{playerName(game.playerIds[1], profiles)}</h2>
+          <div
+            className="move-history-column"
+            aria-label={`Ходы игрока ${playerName(game.playerIds[1], profiles)}`}
+          >
             <ol>
               {moves
                 .filter(

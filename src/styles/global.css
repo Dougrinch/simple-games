@@ -778,16 +778,6 @@ button:disabled {
   border-left: 1px solid var(--line);
 }
 
-.move-history h2 {
-  overflow: hidden;
-  margin: 0 0 10px;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .move-history ol {
   margin: 0;
   padding: 0;

@@ -549,7 +549,7 @@ describe('GameScreen', () => {
     expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
   })
 
-  it('shows each player words newest first in a separate move-history column', () => {
+  it('shows each player words newest first in an unlabeled visual column', () => {
     render(
       <GameScreen
         {...gameScreenProps({
@@ -582,14 +582,22 @@ describe('GameScreen', () => {
     const secondPlayerColumn = columns.item(1)
 
     expect(columns).toHaveLength(2)
-    expect(firstPlayerColumn).toHaveTextContent('Гринч')
+    expect(firstPlayerColumn).toHaveAttribute(
+      'aria-label',
+      'Ходы игрока Гринч',
+    )
+    expect(firstPlayerColumn).not.toHaveTextContent('Гринч')
     expect(
       Array.from(firstPlayerColumn.querySelectorAll('li'), (item) =>
         item.textContent,
       ),
     ).toEqual(['ТРЕ', 'АБЕ'])
     expect(firstPlayerColumn).not.toHaveTextContent('РЕР')
-    expect(secondPlayerColumn).toHaveTextContent('Хинхилла')
+    expect(secondPlayerColumn).toHaveAttribute(
+      'aria-label',
+      'Ходы игрока Хинхилла',
+    )
+    expect(secondPlayerColumn).not.toHaveTextContent('Хинхилла')
     expect(secondPlayerColumn).toHaveTextContent('РЕР')
     expect(secondPlayerColumn).not.toHaveTextContent('АБЕ')
   })
