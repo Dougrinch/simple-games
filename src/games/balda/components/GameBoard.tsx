@@ -36,6 +36,7 @@ type PathDirection = 'up' | 'right' | 'down' | 'left'
 
 const MOVE_HIGHLIGHT_DURATION_MS = 3_000
 const COMPATIBILITY_CLICK_TIMEOUT_MS = 1_000
+const ignoreSelectedMoveChange = () => undefined
 
 const CELL_KEYS = Array.from({ length: 25 }, (_, index) =>
   coordinateToCellKey({
@@ -87,7 +88,7 @@ export function GameBoard({
   disabled,
   onCellPress,
   onPathComplete,
-  onSelectedMoveChange = () => undefined,
+  onSelectedMoveChange = ignoreSelectedMoveChange,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
   const lastMoveNumber = lastMove?.number ?? null
