@@ -236,59 +236,61 @@ export function GameScreen({
         )}
       </section>
 
-      <GameBoard
-        game={game}
-        draft={
-          draft?.letter ? { cell: draft.cell, letter: draft.letter } : null
-        }
-        disabled={!canAct}
-        onCellPress={(cell) => {
-          if (!canAct) {
-            return
+      <div className="board-stage">
+        <GameBoard
+          game={game}
+          draft={
+            draft?.letter ? { cell: draft.cell, letter: draft.letter } : null
           }
+          disabled={!canAct}
+          onCellPress={(cell) => {
+            if (!canAct) {
+              return
+            }
 
-          if (draft?.cell === cell) {
-            onClearDraft()
-            return
-          }
+            if (draft?.cell === cell) {
+              onClearDraft()
+              return
+            }
 
-          if (game.board[cell]) {
-            return
-          }
+            if (game.board[cell]) {
+              return
+            }
 
-          if (!isAvailableCell(game.board, cell)) {
-            return
-          }
+            if (!isAvailableCell(game.board, cell)) {
+              return
+            }
 
-          onOpenKeyboard(cell)
-        }}
-        onPathComplete={(path, invalidMessage) => {
-          if (invalidMessage) {
-            return
-          }
+            onOpenKeyboard(cell)
+          }}
+          onPathComplete={(path, invalidMessage) => {
+            if (invalidMessage) {
+              return
+            }
 
-          if (!draft?.letter) {
-            return
-          }
+            if (!draft?.letter) {
+              return
+            }
 
-          const move: MoveDraft = {
-            expectedRevision: draft.expectedRevision,
-            cell: draft.cell,
-            letter: draft.letter,
-            path,
-          }
-          const result = validateMove(game, playerId, move)
+            const move: MoveDraft = {
+              expectedRevision: draft.expectedRevision,
+              cell: draft.cell,
+              letter: draft.letter,
+              path,
+            }
+            const result = validateMove(game, playerId, move)
 
-          if (!result.ok) {
-            return
-          }
+            if (!result.ok) {
+              return
+            }
 
-          onSubmitMove(move)
-        }}
-        onSelectedMoveChange={setSelectedMoveNumber}
-        selectedMoveRequest={selectedMoveRequest ?? undefined}
-        selectedMoveTimerPaused={ratingOpen}
-      />
+            onSubmitMove(move)
+          }}
+          onSelectedMoveChange={setSelectedMoveNumber}
+          selectedMoveRequest={selectedMoveRequest ?? undefined}
+          selectedMoveTimerPaused={ratingOpen}
+        />
+      </div>
 
       {game.status === 'completed' && (
         <button
