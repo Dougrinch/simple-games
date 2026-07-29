@@ -13,7 +13,7 @@ import {
   RepositoryError,
   type BaldaSession,
 } from '../games/balda/repository'
-import type { CellKey, MoveDraft, PlayerId } from '../games/balda/types'
+import type { CellKey, MoveDraft, PlayerId, WordRating } from '../games/balda/types'
 import { notifyOtherPlayer } from '../platform/push/pushClient'
 
 function LoadingScreen({
@@ -391,6 +391,28 @@ function AuthorizedGame({
     }
   }
 
+  const rateMove = async (moveNumber: number, rating: WordRating) => {
+    const repository = repositoryRef.current
+    const game = session?.game
+    if (!repository || !game || pendingOperation) return
+    setPendingOperation('move')
+    try {
+      const confirmedGame = await repository.rateMove(
+        game.id,
+        moveNumber,
+        rating,
+      )
+      setSession((current) =>
+        current ? { ...current, game: confirmedGame } : current,
+      )
+    } catch (error) {
+      markOffline(error)
+      await resynchronize(repository)
+    } finally {
+      setPendingOperation(null)
+    }
+  }
+
   const resign = async () => {
     const repository = repositoryRef.current
     const game = session?.game
@@ -541,6 +563,7 @@ function AuthorizedGame({
         setKeyboardOpen(false)
       }}
       onSubmitMove={(move) => void submitMove(move)}
+      onRateMove={(moveNumber, rating) => void rateMove(moveNumber, rating)}
       onRollback={() => void rollback()}
       onResign={() => void resign()}
       onCreateGame={() => void createGame()}

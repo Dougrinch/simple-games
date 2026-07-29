@@ -107,6 +107,7 @@ function gameScreenProps(
     onCloseKeyboard: vi.fn(),
     onClearDraft: vi.fn(),
     onSubmitMove: vi.fn(),
+    onRateMove: vi.fn(),
     onRollback: vi.fn(),
     onResign: vi.fn(),
     onCreateGame: vi.fn(),
@@ -329,6 +330,40 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('button', { name: 'низя!' }),
     ).toBeInTheDocument()
+  })
+
+  it('rates the selected word and closes the popup when clicking outside', async () => {
+    const user = userEvent.setup()
+    const onRateMove = vi.fn()
+    render(
+      <GameScreen
+        {...gameScreenProps({ game: movedGame(), onRateMove })}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Оценить' }))
+    expect(screen.getByRole('dialog', { name: 'Оценить слово АБЕ' })).toBeInTheDocument()
+    fireEvent.click(document.querySelector('.rating-backdrop') as HTMLElement)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(onRateMove).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Оценить' }))
+    await user.click(screen.getByRole('button', { name: 'Охуенно ❤️' }))
+    expect(onRateMove).toHaveBeenCalledWith(1, 'great')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('shows only the saved rating emoji next to the word', () => {
+    const ratedGame = movedGame()
+    const move = ratedGame.moves?.['1']
+    if (!move) throw new Error('Expected the first move.')
+    move.rating = 'bad'
+
+    render(<GameScreen {...gameScreenProps({ game: ratedGame })} />)
+
+    expect(screen.queryByRole('button', { name: 'Оценить' })).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'История ходов' })).toHaveTextContent('АБЕ 🙄')
+    expect(screen.queryByText(/Хуйня/u)).not.toBeInTheDocument()
   })
 
   it('keeps selected words on the board and out of the status row', () => {
