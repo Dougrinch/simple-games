@@ -706,6 +706,7 @@ export class BaldaRepository {
 
   async rateMove(
     gameId: string,
+    playerId: PlayerId,
     moveNumber: number,
     rating: WordRating,
   ): Promise<BaldaGame> {
@@ -718,7 +719,7 @@ export class BaldaRepository {
           if (value === null) return
           const game = parseBaldaGame(value)
           const move = game.moves?.[String(moveNumber)]
-          if (!move || move.rating) return
+          if (!move || move.authorPlayerId === playerId || move.rating) return
           return serializeGameWithServerTimestamps({
             ...game,
             moves: {
@@ -730,7 +731,10 @@ export class BaldaRepository {
         { applyLocally: false },
       )
       if (!transaction.committed) {
-        throw new RepositoryError('Это слово уже оценено.', 'conflict')
+        throw new RepositoryError(
+          'Можно оценивать только чужие неоценённые слова.',
+          'conflict',
+        )
       }
       return this.storeConfirmedGame(parseBaldaGame(transaction.snapshot.val()))
     } catch (error) {
