@@ -399,6 +399,7 @@ function AuthorizedGame({
     try {
       const confirmedGame = await repository.rateMove(
         game.id,
+        playerId,
         moveNumber,
         rating,
       )

@@ -98,10 +98,15 @@ export function GameScreen({
     ? game.moves?.[String(selectedMoveNumber)]
     : undefined
   const canRate = Boolean(
-    selectedMove && !selectedMove.rating && online && synchronized && !pending,
+    selectedMove &&
+      selectedMove.authorPlayerId !== playerId &&
+      !selectedMove.rating &&
+      online &&
+      synchronized &&
+      !pending,
   )
   const rateSelectedMove = (rating: WordRating) => {
-    if (!selectedMove) {
+    if (!selectedMove || selectedMove.authorPlayerId === playerId) {
       return
     }
     setRatingOpen(false)
@@ -115,10 +120,14 @@ export function GameScreen({
   }, [game.id, game.status])
 
   useEffect(() => {
-    if (!selectedMove || selectedMove.rating) {
+    if (
+      !selectedMove ||
+      selectedMove.authorPlayerId === playerId ||
+      selectedMove.rating
+    ) {
       setRatingOpen(false)
     }
-  }, [selectedMove])
+  }, [playerId, selectedMove])
 
   return (
     <main className="game-page">
@@ -352,7 +361,10 @@ export function GameScreen({
         </div>
       )}
 
-      {ratingOpen && selectedMove && !selectedMove.rating && (
+      {ratingOpen &&
+        selectedMove &&
+        selectedMove.authorPlayerId !== playerId &&
+        !selectedMove.rating && (
         <div className="rating-backdrop" onClick={() => setRatingOpen(false)}>
           <section
             className="rating-dialog"

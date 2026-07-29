@@ -337,7 +337,11 @@ describe('GameScreen', () => {
     const onRateMove = vi.fn()
     render(
       <GameScreen
-        {...gameScreenProps({ game: movedGame(), onRateMove })}
+        {...gameScreenProps({
+          game: movedGame(),
+          playerId: 'hinhillaa',
+          onRateMove,
+        })}
       />,
     )
 
@@ -353,11 +357,33 @@ describe('GameScreen', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('does not allow a player to rate their own word', () => {
+    const onRateMove = vi.fn()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: movedGame(),
+          playerId: 'grinch131',
+          onRateMove,
+        })}
+      />,
+    )
+
+    expect(
+      screen.queryByRole('button', { name: 'Оценить' }),
+    ).not.toBeInTheDocument()
+    expect(onRateMove).not.toHaveBeenCalled()
+  })
+
   it('keeps the rating popup closed after the word selection expires', () => {
     vi.useFakeTimers()
 
     try {
-      render(<GameScreen {...gameScreenProps({ game: movedGame() })} />)
+      render(
+        <GameScreen
+          {...gameScreenProps({ game: twiceMovedGame() })}
+        />,
+      )
 
       fireEvent.click(screen.getByRole('button', { name: 'Оценить' }))
       expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -377,7 +403,9 @@ describe('GameScreen', () => {
         }),
       )
 
-      expect(screen.getByRole('button', { name: 'Оценить' })).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Оценить' }),
+      ).not.toBeInTheDocument()
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
