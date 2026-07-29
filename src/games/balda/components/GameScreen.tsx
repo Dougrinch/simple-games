@@ -80,6 +80,10 @@ export function GameScreen({
   const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(
     game.moveCount || null,
   )
+  const [selectedMoveRequest, setSelectedMoveRequest] = useState<{
+    moveNumber: number
+    requestId: number
+  } | null>(null)
   const [ratingOpen, setRatingOpen] = useState(false)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
@@ -112,11 +116,19 @@ export function GameScreen({
     setRatingOpen(false)
     onRateMove(selectedMove.number, rating)
   }
+  const selectMove = (moveNumber: number) => {
+    setSelectedMoveNumber(moveNumber)
+    setSelectedMoveRequest((request) => ({
+      moveNumber,
+      requestId: (request?.requestId ?? 0) + 1,
+    }))
+  }
 
   useEffect(() => {
     setResignationOpen(false)
     setRatingOpen(false)
     setSelectedMoveNumber(game.moveCount || null)
+    setSelectedMoveRequest(null)
   }, [game.id, game.status])
 
   useEffect(() => {
@@ -264,6 +276,7 @@ export function GameScreen({
           onSubmitMove(move)
         }}
         onSelectedMoveChange={setSelectedMoveNumber}
+        selectedMoveRequest={selectedMoveRequest ?? undefined}
       />
 
       {game.status === 'completed' && (
@@ -290,8 +303,14 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      {move.word}
-                      {emoji && ` ${emoji}`}
+                      <button
+                        className="move-history-word"
+                        type="button"
+                        onClick={() => selectMove(move.number)}
+                      >
+                        {move.word}
+                        {emoji && ` ${emoji}`}
+                      </button>
                     </li>
                   )
                 })}
@@ -308,8 +327,14 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      {move.word}
-                      {emoji && ` ${emoji}`}
+                      <button
+                        className="move-history-word"
+                        type="button"
+                        onClick={() => selectMove(move.number)}
+                      >
+                        {move.word}
+                        {emoji && ` ${emoji}`}
+                      </button>
                     </li>
                   )
                 })}
