@@ -19,7 +19,8 @@ interface GameBoardProps {
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
   onSelectedMoveChange?: (moveNumber: number | null) => void
-  selectedMoveRequest?: { moveNumber: number; requestId: number }
+  selectedMoveRequest?: { moveNumber: number | null; requestId: number }
+  selectedMoveTimerPaused?: boolean
 }
 
 interface GestureState {
@@ -91,6 +92,7 @@ export function GameBoard({
   onPathComplete,
   onSelectedMoveChange = ignoreSelectedMoveChange,
   selectedMoveRequest,
+  selectedMoveTimerPaused = false,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
   const lastMoveNumber = lastMove?.number ?? null
@@ -103,6 +105,8 @@ export function GameBoard({
   const highlightTimeoutRef = useRef<
     ReturnType<typeof globalThis.setTimeout> | undefined
   >(undefined)
+  const selectedMoveTimerPausedRef = useRef(selectedMoveTimerPaused)
+  selectedMoveTimerPausedRef.current = selectedMoveTimerPaused
   const gestureRef = useRef<GestureState | null>(null)
   const suppressNextClickRef = useRef(false)
   const suppressClickTimeoutRef = useRef<
@@ -146,16 +150,18 @@ export function GameBoard({
       const nextHighlight = { gameId: game.id, moveNumber }
       setHighlightedMoveState(nextHighlight)
       onSelectedMoveChange(moveNumber)
-      highlightTimeoutRef.current = globalThis.setTimeout(() => {
-        setHighlightedMoveState((currentHighlight) =>
-          currentHighlight?.gameId === nextHighlight.gameId &&
-          currentHighlight.moveNumber === nextHighlight.moveNumber
-            ? null
-            : currentHighlight,
-        )
-        onSelectedMoveChange(null)
-        highlightTimeoutRef.current = undefined
-      }, MOVE_HIGHLIGHT_DURATION_MS)
+      if (!selectedMoveTimerPausedRef.current) {
+        highlightTimeoutRef.current = globalThis.setTimeout(() => {
+          setHighlightedMoveState((currentHighlight) =>
+            currentHighlight?.gameId === nextHighlight.gameId &&
+            currentHighlight.moveNumber === nextHighlight.moveNumber
+              ? null
+              : currentHighlight,
+          )
+          onSelectedMoveChange(null)
+          highlightTimeoutRef.current = undefined
+        }, MOVE_HIGHLIGHT_DURATION_MS)
+      }
     },
     [clearHighlightTimer, game.id, onSelectedMoveChange],
   )
@@ -181,9 +187,19 @@ export function GameBoard({
 
   useEffect(() => {
     if (selectedMoveRequest) {
-      highlightMove(selectedMoveRequest.moveNumber)
+      if (selectedMoveRequest.moveNumber === null) {
+        clearHighlightedMove()
+      } else {
+        highlightMove(selectedMoveRequest.moveNumber)
+      }
     }
-  }, [highlightMove, selectedMoveRequest])
+  }, [clearHighlightedMove, highlightMove, selectedMoveRequest])
+
+  useEffect(() => {
+    if (selectedMoveTimerPaused) {
+      clearHighlightTimer()
+    }
+  }, [clearHighlightTimer, selectedMoveTimerPaused])
 
   useEffect(() => clearSuppressedClick, [clearSuppressedClick])
 

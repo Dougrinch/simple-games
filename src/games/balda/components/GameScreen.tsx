@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
@@ -81,10 +81,11 @@ export function GameScreen({
     game.moveCount || null,
   )
   const [selectedMoveRequest, setSelectedMoveRequest] = useState<{
-    moveNumber: number
+    moveNumber: number | null
     requestId: number
   } | null>(null)
   const [ratingOpen, setRatingOpen] = useState(false)
+  const ratingWasOpenRef = useRef(false)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
   )
@@ -116,13 +117,13 @@ export function GameScreen({
     setRatingOpen(false)
     onRateMove(selectedMove.number, rating)
   }
-  const selectMove = (moveNumber: number) => {
+  const selectMove = useCallback((moveNumber: number | null) => {
     setSelectedMoveNumber(moveNumber)
     setSelectedMoveRequest((request) => ({
       moveNumber,
       requestId: (request?.requestId ?? 0) + 1,
     }))
-  }
+  }, [])
 
   useEffect(() => {
     setResignationOpen(false)
@@ -140,6 +141,13 @@ export function GameScreen({
       setRatingOpen(false)
     }
   }, [playerId, selectedMove])
+
+  useEffect(() => {
+    if (ratingWasOpenRef.current && !ratingOpen) {
+      selectMove(null)
+    }
+    ratingWasOpenRef.current = ratingOpen
+  }, [ratingOpen, selectMove])
 
   return (
     <main className="game-page">
@@ -277,6 +285,7 @@ export function GameScreen({
         }}
         onSelectedMoveChange={setSelectedMoveNumber}
         selectedMoveRequest={selectedMoveRequest ?? undefined}
+        selectedMoveTimerPaused={ratingOpen}
       />
 
       {game.status === 'completed' && (

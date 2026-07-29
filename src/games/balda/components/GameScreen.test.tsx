@@ -349,12 +349,21 @@ describe('GameScreen', () => {
     expect(screen.getByRole('dialog', { name: 'Оценить слово АБЕ' })).toBeInTheDocument()
     fireEvent.click(document.querySelector('.rating-backdrop') as HTMLElement)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Оценить' }),
+    ).not.toBeInTheDocument()
+    expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
     expect(onRateMove).not.toHaveBeenCalled()
 
+    await user.click(screen.getByRole('button', { name: 'АБЕ' }))
     await user.click(screen.getByRole('button', { name: 'Оценить' }))
     await user.click(screen.getByRole('button', { name: 'Охуенно ❤️' }))
     expect(onRateMove).toHaveBeenCalledWith(1, 'great')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Оценить' }),
+    ).not.toBeInTheDocument()
+    expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
   })
 
   it('does not allow a player to rate their own word', () => {
@@ -375,34 +384,46 @@ describe('GameScreen', () => {
     expect(onRateMove).not.toHaveBeenCalled()
   })
 
-  it('keeps the rating popup closed after the word selection expires', () => {
+  it('pauses the selected word timer while rating and clears the selection on close', () => {
     vi.useFakeTimers()
 
     try {
       render(
         <GameScreen
-          {...gameScreenProps({ game: twiceMovedGame() })}
+          {...gameScreenProps({
+            game: twiceMovedGame(),
+            playerId: 'hinhillaa',
+          })}
         />,
       )
 
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
       fireEvent.click(screen.getByRole('button', { name: 'Оценить' }))
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(
+        screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
+      ).toBeInTheDocument()
 
       act(() => {
-        vi.advanceTimersByTime(3_000)
+        vi.advanceTimersByTime(30_000)
       })
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      ).toHaveClass('is-last-path', 'is-last-letter')
+      expect(
+        screen.getByRole('button', { name: 'Оценить' }),
+      ).toBeInTheDocument()
+
+      fireEvent.click(document.querySelector('.rating-backdrop') as HTMLElement)
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(
         screen.queryByRole('button', { name: 'Оценить' }),
       ).not.toBeInTheDocument()
-
-      fireEvent.click(screen.getByRole('button', { name: 'РЕР' }))
-
-      expect(
-        screen.queryByRole('button', { name: 'Оценить' }),
-      ).toBeInTheDocument()
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
