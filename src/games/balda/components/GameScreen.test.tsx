@@ -302,15 +302,17 @@ describe('GameScreen', () => {
     expect(onOpenKeyboard).not.toHaveBeenCalled()
   })
 
-  it('shows exact score, turn, highlighted word and both rollback variants', () => {
+  it('shows exact score, turn, no selected word and both rollback variants', () => {
     const moved = movedGame()
     const { rerender } = render(
       <GameScreen {...gameScreenProps({ game: moved })} />,
     )
 
     expect(screen.getByText('Ход вражины')).toHaveClass('is-enemy')
-    expect(document.querySelector('.game-status')).toHaveTextContent('АБЕ')
-    expect(screen.queryByText(/Последнее слово/u)).not.toBeInTheDocument()
+    expect(document.querySelector('.game-status')).not.toHaveTextContent(
+      'АБЕ',
+    )
+    expect(document.querySelector('.highlighted-word')).not.toBeInTheDocument()
     expect(screen.getByLabelText('3 очков')).toBeInTheDocument()
     const ownRollback = screen.getByRole('button', {
       name: 'ГАААААЛЯ!!',
@@ -329,7 +331,7 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows only the currently highlighted word and hides it with the highlight', () => {
+  it('keeps selected words on the board and out of the status row', () => {
     vi.useFakeTimers()
 
     try {
@@ -343,8 +345,11 @@ describe('GameScreen', () => {
       )
 
       const status = document.querySelector('.game-status')
-      expect(status).toHaveTextContent('РЕР')
-      expect(status).not.toHaveTextContent('Последнее слово')
+      const secondMoveLetter = screen.getByRole('gridcell', {
+        name: 'Клетка 1, 1, буква Р',
+      })
+      expect(status).not.toHaveTextContent('РЕР')
+      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
 
       fireEvent.click(
         screen.getByRole('gridcell', {
@@ -352,18 +357,19 @@ describe('GameScreen', () => {
         }),
       )
 
-      expect(status).toHaveTextContent('АБЕ')
       expect(status).not.toHaveTextContent('РЕР')
-
-      act(() => {
-        vi.advanceTimersByTime(2_999)
-      })
-      expect(status).toHaveTextContent('АБЕ')
-
-      act(() => {
-        vi.advanceTimersByTime(1)
-      })
       expect(status).not.toHaveTextContent('АБЕ')
+      expect(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      ).toHaveClass('is-last-path', 'is-last-letter')
+
+      act(() => {
+        vi.advanceTimersByTime(3_000)
+      })
+
+      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
@@ -379,9 +385,6 @@ describe('GameScreen', () => {
       />,
     )
 
-    const status = document.querySelector('.game-status')
-    expect(status).toHaveTextContent('РЕР')
-
     rerender(
       <GameScreen
         {...gameScreenProps({
@@ -391,8 +394,6 @@ describe('GameScreen', () => {
       />,
     )
 
-    expect(status).not.toHaveTextContent('РЕР')
-    expect(status).not.toHaveTextContent('АБЕ')
     expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
     expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
   })

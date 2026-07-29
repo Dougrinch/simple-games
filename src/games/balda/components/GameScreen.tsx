@@ -67,9 +67,6 @@ export function GameScreen({
   const isActive = game.status === 'active'
   const isMyTurn = isActive && game.turnPlayerId === playerId
   const canAct = isActive && isMyTurn && online && synchronized && !pending
-  const [highlightedWord, setHighlightedWord] = useState<string | null>(
-    game.moves?.[String(game.moveCount)]?.word ?? null,
-  )
   const [resignationOpen, setResignationOpen] = useState(false)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
@@ -134,11 +131,6 @@ export function GameScreen({
             >
               {isMyTurn ? 'Мой ход' : 'Ход вражины'}
             </span>
-            {highlightedWord && (
-              <p className="highlighted-word">
-                <strong>{highlightedWord}</strong>
-              </p>
-            )}
             {showRollback && (
               <button
                 className="danger-button rollback-button"
@@ -176,7 +168,6 @@ export function GameScreen({
           draft?.letter ? { cell: draft.cell, letter: draft.letter } : null
         }
         disabled={!canAct}
-        onHighlightedWordChange={setHighlightedWord}
         onCellPress={(cell) => {
           if (!canAct) {
             return

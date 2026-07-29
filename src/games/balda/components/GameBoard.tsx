@@ -18,7 +18,6 @@ interface GameBoardProps {
   disabled: boolean
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
-  onHighlightedWordChange?: (word: string | null) => void
 }
 
 interface GestureState {
@@ -87,7 +86,6 @@ export function GameBoard({
   disabled,
   onCellPress,
   onPathComplete,
-  onHighlightedWordChange,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
   const lastMoveNumber = lastMove?.number ?? null
@@ -179,10 +177,6 @@ export function GameBoard({
     highlightedMoveState?.gameId === game.id
       ? game.moves?.[String(highlightedMoveState.moveNumber)]
       : undefined
-
-  useEffect(() => {
-    onHighlightedWordChange?.(highlightedMove?.word ?? null)
-  }, [highlightedMove?.word, onHighlightedWordChange])
 
   const updatePath = (
     nextCell: CellKey | null,
