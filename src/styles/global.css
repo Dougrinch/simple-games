@@ -23,18 +23,32 @@
 }
 
 html {
+  width: 100%;
   min-width: 320px;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 0%, rgb(75 132 91 / 16%), transparent 34rem),
     #101914;
+  overscroll-behavior: none;
 }
 
 body {
+  width: 100%;
   min-width: 320px;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
+  overflow: hidden;
   margin: 0;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 button,
@@ -58,14 +72,18 @@ button:disabled {
 
 .centered-screen {
   display: grid;
-  min-height: 100vh;
-  min-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding:
     max(24px, env(safe-area-inset-top))
     max(18px, env(safe-area-inset-right))
     max(24px, env(safe-area-inset-bottom))
     max(18px, env(safe-area-inset-left));
   place-items: center;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .state-card {
@@ -729,7 +747,7 @@ button:disabled {
   border-top: 1px solid var(--line);
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -882,6 +900,8 @@ button:disabled {
   border-radius: 28px;
   background: var(--surface-raised);
   box-shadow: var(--shadow);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .letter-grid {
@@ -965,7 +985,7 @@ button:disabled {
   display: grid;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   margin: 18px 0 0;
   padding-right: 6px;
   padding-left: 22px;
