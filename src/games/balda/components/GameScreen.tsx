@@ -76,7 +76,9 @@ export function GameScreen({
   const isActive = game.status === 'active'
   const isMyTurn = isActive && game.turnPlayerId === playerId
   const canAct = isActive && isMyTurn && online && synchronized && !pending
+  const canResign = isActive && online && synchronized && !pending
   const [resignationOpen, setResignationOpen] = useState(false)
+  const [resignationArmed, setResignationArmed] = useState(false)
   const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(
     game.moveCount || null,
   )
@@ -129,10 +131,23 @@ export function GameScreen({
 
   useEffect(() => {
     setResignationOpen(false)
+    setResignationArmed(false)
     setRatingOpen(false)
     setSelectedMoveNumber(game.moveCount || null)
     setSelectedMoveRequest(null)
   }, [game.id, game.status])
+
+  useEffect(() => {
+    if (!resignationArmed) {
+      return
+    }
+
+    const timeout = globalThis.setTimeout(() => {
+      setResignationArmed(false)
+    }, 3_000)
+
+    return () => globalThis.clearTimeout(timeout)
+  }, [resignationArmed])
 
   useEffect(() => {
     if (
@@ -191,11 +206,32 @@ export function GameScreen({
       <section className="game-status" aria-live="polite">
         {game.status === 'active' ? (
           <>
-            <span
-              className={`turn-pill ${isMyTurn ? 'is-mine' : 'is-enemy'}`}
+            <button
+              className={`turn-pill turn-action ${
+                resignationArmed
+                  ? 'is-surrender'
+                  : isMyTurn
+                    ? 'is-mine'
+                    : 'is-enemy'
+              }`}
+              type="button"
+              disabled={!canResign}
+              onClick={() => {
+                if (resignationArmed) {
+                  setResignationArmed(false)
+                  setResignationOpen(true)
+                  return
+                }
+
+                setResignationArmed(true)
+              }}
             >
-              {isMyTurn ? 'Мой ход' : 'Ход вражины'}
-            </span>
+              {resignationArmed
+                ? 'Сдаться'
+                : isMyTurn
+                  ? 'Мой ход'
+                  : 'Ход вражины'}
+            </button>
             {canRate && (
               <button
                 className="secondary-button rating-button"
@@ -354,17 +390,6 @@ export function GameScreen({
             </ol>
           </div>
         </section>
-      )}
-
-      {game.status === 'active' && (
-        <button
-          className="danger-button surrender-button"
-          type="button"
-          disabled={!online || !synchronized || pending}
-          onClick={() => setResignationOpen(true)}
-        >
-          Сдаться
-        </button>
       )}
 
       {game.status === 'active' && resignationOpen && (

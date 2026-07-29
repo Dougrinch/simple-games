@@ -478,6 +478,23 @@ button:disabled {
   background: rgb(255 141 126 / 16%);
 }
 
+.turn-action {
+  appearance: none;
+  width: auto;
+  cursor: pointer;
+}
+
+.turn-action:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.turn-pill.is-surrender {
+  border-color: rgb(255 141 126 / 45%);
+  color: #ffd7d1;
+  background: rgb(255 141 126 / 16%);
+}
+
 .final-result {
   display: flex;
   width: 100%;
@@ -799,14 +816,6 @@ button:disabled {
 
 .move-history-word:active {
   color: var(--green);
-}
-
-.game-page > .surrender-button {
-  margin-top: auto;
-}
-
-.game-page > .move-history + .surrender-button {
-  margin-top: 12px;
 }
 
 .confirmation-backdrop {

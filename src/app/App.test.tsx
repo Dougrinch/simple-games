@@ -544,6 +544,7 @@ describe('App states and orchestration', () => {
     repositoryMocks.resignGame.mockResolvedValue(resigned.value)
     render(<App />)
 
+    await user.click(screen.getByRole('button', { name: 'Ход вражины' }))
     await user.click(screen.getByRole('button', { name: 'Сдаться' }))
     await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
 
@@ -590,6 +591,7 @@ describe('App states and orchestration', () => {
     )
     render(<App />)
 
+    await user.click(screen.getByRole('button', { name: 'Мой ход' }))
     await user.click(screen.getByRole('button', { name: 'Сдаться' }))
     await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
 

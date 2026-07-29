@@ -673,7 +673,7 @@ describe('GameScreen', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('places surrender after move history and allows it regardless of turn', () => {
+  it('hides surrender behind the turn button regardless of turn', () => {
     const moved = movedGame()
     render(
       <GameScreen
@@ -685,13 +685,18 @@ describe('GameScreen', () => {
     )
 
     const history = screen.getByRole('region', { name: 'История ходов' })
-    const surrender = screen.getByRole('button', { name: 'Сдаться' })
+    const turn = screen.getByRole('button', { name: 'Ход вражины' })
 
-    expect(history.nextElementSibling).toBe(surrender)
-    expect(surrender).toBeEnabled()
+    expect(turn.parentElement).toHaveClass('game-status')
+    expect(history.nextElementSibling).toBeNull()
+    expect(document.querySelector('.surrender-button')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Сдаться' }),
+    ).not.toBeInTheDocument()
+    expect(turn).toBeEnabled()
   })
 
-  it('allows surrender before the first move and requires confirmation', async () => {
+  it('reveals surrender on the first press and requires confirmation on the second', async () => {
     const user = userEvent.setup()
     const onResign = vi.fn()
     render(
@@ -703,6 +708,10 @@ describe('GameScreen', () => {
       />,
     )
 
+    await user.click(screen.getByRole('button', { name: 'Ход вражины' }))
+    expect(
+      screen.queryByRole('dialog', { name: 'Точно сдаёшься?' }),
+    ).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Сдаться' }))
     const dialog = screen.getByRole('dialog', {
       name: 'Точно сдаёшься?',
@@ -717,12 +726,42 @@ describe('GameScreen', () => {
       screen.queryByRole('dialog', { name: 'Точно сдаёшься?' }),
     ).not.toBeInTheDocument()
 
+    await user.click(screen.getByRole('button', { name: 'Ход вражины' }))
     await user.click(screen.getByRole('button', { name: 'Сдаться' }))
     await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
     expect(onResign).toHaveBeenCalledOnce()
   })
 
-  it('disables surrender while the game cannot mutate', () => {
+  it('returns to the turn label if surrender is not pressed for three seconds', () => {
+    vi.useFakeTimers()
+
+    try {
+      render(<GameScreen {...gameScreenProps()} />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Мой ход' }))
+      expect(
+        screen.getByRole('button', { name: 'Сдаться' }),
+      ).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(2_999)
+      })
+      expect(
+        screen.getByRole('button', { name: 'Сдаться' }),
+      ).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(
+        screen.getByRole('button', { name: 'Мой ход' }),
+      ).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('disables the turn action while the game cannot mutate', () => {
     const { rerender } = render(
       <GameScreen
         {...gameScreenProps({
@@ -732,10 +771,10 @@ describe('GameScreen', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Сдаться' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Мой ход' })).toBeDisabled()
 
     rerender(<GameScreen {...gameScreenProps({ pending: true })} />)
-    expect(screen.getByRole('button', { name: 'Сдаться' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Мой ход' })).toBeDisabled()
   })
 
   it('explains a resignation to both players', () => {
