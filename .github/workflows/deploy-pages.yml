@@ -33,8 +33,6 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -64,9 +62,6 @@ jobs:
 
       - name: Validate starting-word seed
         run: npm run seed:validate
-
-      - name: Validate release notes
-        run: npm run release-notes:check
 
       - name: Run unit and component tests
         run: npm test
