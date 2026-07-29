@@ -81,6 +81,7 @@ export function GameScreen({
     game.moveCount || null,
   )
   const [selectedMoveRequest, setSelectedMoveRequest] = useState<{
+    gameId: string
     moveNumber: number | null
     requestId: number
   } | null>(null)
@@ -120,10 +121,11 @@ export function GameScreen({
   const selectMove = useCallback((moveNumber: number | null) => {
     setSelectedMoveNumber(moveNumber)
     setSelectedMoveRequest((request) => ({
+      gameId: game.id,
       moveNumber,
       requestId: (request?.requestId ?? 0) + 1,
     }))
-  }, [])
+  }, [game.id])
 
   useEffect(() => {
     setResignationOpen(false)

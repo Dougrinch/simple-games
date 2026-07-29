@@ -19,7 +19,11 @@ interface GameBoardProps {
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
   onSelectedMoveChange?: (moveNumber: number | null) => void
-  selectedMoveRequest?: { moveNumber: number | null; requestId: number }
+  selectedMoveRequest?: {
+    gameId: string
+    moveNumber: number | null
+    requestId: number
+  }
   selectedMoveTimerPaused?: boolean
 }
 
@@ -186,14 +190,14 @@ export function GameBoard({
   ])
 
   useEffect(() => {
-    if (selectedMoveRequest) {
+    if (selectedMoveRequest?.gameId === game.id) {
       if (selectedMoveRequest.moveNumber === null) {
         clearHighlightedMove()
       } else {
         highlightMove(selectedMoveRequest.moveNumber)
       }
     }
-  }, [clearHighlightedMove, highlightMove, selectedMoveRequest])
+  }, [clearHighlightedMove, game.id, highlightMove, selectedMoveRequest])
 
   useEffect(() => {
     if (selectedMoveTimerPaused) {

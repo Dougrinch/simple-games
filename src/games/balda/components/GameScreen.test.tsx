@@ -482,6 +482,50 @@ describe('GameScreen', () => {
     }
   })
 
+  it('ignores a selected word request from the previous game', () => {
+    vi.useFakeTimers()
+
+    try {
+      const { rerender } = render(
+        <GameScreen
+          {...gameScreenProps({
+            game: twiceMovedGame(),
+            playerId: 'grinch131',
+          })}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
+      expect(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      ).toHaveClass('is-last-path', 'is-last-letter')
+
+      rerender(
+        <GameScreen
+          {...gameScreenProps({
+            game: { ...twiceMovedGame(), id: 'next-game' },
+            playerId: 'grinch131',
+          })}
+        />,
+      )
+
+      expect(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      ).not.toHaveClass('is-last-path', 'is-last-letter')
+      expect(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 1, буква Р',
+        }),
+      ).toHaveClass('is-last-path', 'is-last-letter')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('clears the highlighted word instead of selecting the previous move after rollback', () => {
     const { rerender } = render(
       <GameScreen
