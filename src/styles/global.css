@@ -275,7 +275,7 @@ button:disabled {
   overflow: hidden;
   margin: 0 auto;
   padding:
-    max(18px, env(safe-area-inset-top))
+    max(13px, env(safe-area-inset-top))
     max(14px, env(safe-area-inset-right))
     max(28px, env(safe-area-inset-bottom))
     max(14px, env(safe-area-inset-left));
@@ -286,9 +286,9 @@ button:disabled {
 .scoreboard {
   display: grid;
   flex: 0 0 auto;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 9px;
 }
 
 .push-notification-control {
@@ -346,10 +346,10 @@ button:disabled {
 .score-card {
   display: flex;
   min-width: 0;
-  min-height: 76px;
-  padding: 13px 14px;
+  min-height: 66px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 17px;
   background: var(--surface);
   align-items: center;
   justify-content: space-between;
@@ -376,21 +376,22 @@ button:disabled {
 
 .score-card small {
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--muted);
+  font-size: 0.78rem;
 }
 
 .score-card strong {
   color: var(--gold);
-  font-size: clamp(1.5rem, 8vw, 2.3rem);
+  font-size: clamp(1.45rem, 7.5vw, 2.15rem);
   font-variant-numeric: tabular-nums;
 }
 
 .game-status {
   display: grid;
-  min-height: 64px;
+  min-height: 54px;
   flex: 0 0 auto;
-  margin: 0 2px 12px;
+  margin: 0 2px 9px;
   align-items: center;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
@@ -408,16 +409,16 @@ button:disabled {
 
 .game-status > .rollback-button {
   width: auto;
-  min-height: 40px;
-  padding: 8px 12px;
+  min-height: 38px;
+  padding: 7px 11px;
   grid-column: 3;
   justify-self: end;
   white-space: nowrap;
 }
 
 .game-status > .rating-button {
-  min-height: 40px;
-  padding: 8px 12px;
+  min-height: 38px;
+  padding: 7px 11px;
   grid-column: 2;
 }
 
@@ -1011,7 +1012,7 @@ button:disabled {
 
 @media (min-width: 600px) {
   .game-page {
-    padding-top: 30px;
+    padding-top: max(22px, env(safe-area-inset-top));
     padding-bottom: 44px;
   }
 
