@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createInitialGame } from './domain'
 import {
@@ -14,6 +14,7 @@ import {
 describe('read-only local game snapshot', () => {
   afterEach(() => {
     localStorage.clear()
+    vi.restoreAllMocks()
   })
 
   it('round-trips only a validated active game for the same player', () => {
@@ -26,6 +27,7 @@ describe('read-only local game snapshot', () => {
   })
 
   it('discards corrupted data instead of using it as game state', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     localStorage.setItem(
       'simple-games:balda:last-confirmed:v1:grinch131',
       '{"playerId":"grinch131","game":{"schemaVersion":99}}',
@@ -33,6 +35,11 @@ describe('read-only local game snapshot', () => {
 
     expect(loadGameSnapshot('grinch131')).toBeNull()
     expect(localStorage).toHaveLength(0)
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalledWith(
+      'Ignoring an invalid local game snapshot.',
+      expect.any(Error),
+    )
   })
 
   it('removes the snapshot after a completed game', () => {
