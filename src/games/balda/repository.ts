@@ -31,6 +31,7 @@ import type {
   PlayerId,
   ResignationRequest,
   RollbackRequest,
+  WordRating,
 } from './types'
 
 const definition = getGameDefinition('balda')
@@ -700,6 +701,40 @@ export class BaldaRepository {
       )
     } catch (error) {
       throw mapRepositoryError(error, 'Submitting a move')
+    }
+  }
+
+  async rateMove(
+    gameId: string,
+    moveNumber: number,
+    rating: WordRating,
+  ): Promise<BaldaGame> {
+    this.requireReady()
+    try {
+      const gameReference = ref(this.database, `${ROOT_PATH}/games/${gameId}`)
+      const transaction = await runTransaction(
+        gameReference,
+        (value: unknown) => {
+          if (value === null) return
+          const game = parseBaldaGame(value)
+          const move = game.moves?.[String(moveNumber)]
+          if (!move || move.rating) return
+          return serializeGameWithServerTimestamps({
+            ...game,
+            moves: {
+              ...game.moves,
+              [String(moveNumber)]: { ...move, rating },
+            },
+          })
+        },
+        { applyLocally: false },
+      )
+      if (!transaction.committed) {
+        throw new RepositoryError('Это слово уже оценено.', 'conflict')
+      }
+      return this.storeConfirmedGame(parseBaldaGame(transaction.snapshot.val()))
+    } catch (error) {
+      throw mapRepositoryError(error, 'Rating a move')
     }
   }
 

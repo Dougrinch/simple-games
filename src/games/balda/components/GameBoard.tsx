@@ -18,6 +18,7 @@ interface GameBoardProps {
   disabled: boolean
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
+  onSelectedMoveChange?: (moveNumber: number | null) => void
 }
 
 interface GestureState {
@@ -86,6 +87,7 @@ export function GameBoard({
   disabled,
   onCellPress,
   onPathComplete,
+  onSelectedMoveChange = () => undefined,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
   const lastMoveNumber = lastMove?.number ?? null
@@ -131,7 +133,8 @@ export function GameBoard({
   const clearHighlightedMove = useCallback(() => {
     clearHighlightTimer()
     setHighlightedMoveState(null)
-  }, [clearHighlightTimer])
+    onSelectedMoveChange(null)
+  }, [clearHighlightTimer, onSelectedMoveChange])
 
   const highlightMove = useCallback(
     (moveNumber: number) => {
@@ -139,6 +142,7 @@ export function GameBoard({
 
       const nextHighlight = { gameId: game.id, moveNumber }
       setHighlightedMoveState(nextHighlight)
+      onSelectedMoveChange(moveNumber)
       highlightTimeoutRef.current = globalThis.setTimeout(() => {
         setHighlightedMoveState((currentHighlight) =>
           currentHighlight?.gameId === nextHighlight.gameId &&
@@ -146,10 +150,11 @@ export function GameBoard({
             ? null
             : currentHighlight,
         )
+        onSelectedMoveChange(null)
         highlightTimeoutRef.current = undefined
       }, MOVE_HIGHLIGHT_DURATION_MS)
     },
-    [clearHighlightTimer, game.id],
+    [clearHighlightTimer, game.id, onSelectedMoveChange],
   )
 
   useEffect(() => {

@@ -6,6 +6,7 @@ import type {
   CellKey,
   MoveDraft,
   PlayerId,
+  WordRating,
 } from '../types'
 import type { PlayerProfile } from '../repository'
 import { GameBoard } from './GameBoard'
@@ -33,6 +34,7 @@ interface GameScreenProps {
   onCloseKeyboard: () => void
   onClearDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
+  onRateMove?: (moveNumber: number, rating: WordRating) => void
   onRollback: () => void
   onResign: () => void
   onCreateGame: () => void
@@ -43,6 +45,12 @@ function playerName(
   profiles: Partial<Record<PlayerId, PlayerProfile>>,
 ): string {
   return profiles[playerId]?.displayName ?? playerId
+}
+
+function ratingEmoji(rating: WordRating | undefined): string | null {
+  if (rating === 'bad') return '🙄'
+  if (rating === 'great') return '❤️'
+  return null
 }
 
 export function GameScreen({
@@ -60,6 +68,7 @@ export function GameScreen({
   onCloseKeyboard,
   onClearDraft,
   onSubmitMove,
+  onRateMove = () => undefined,
   onRollback,
   onResign,
   onCreateGame,
@@ -68,6 +77,10 @@ export function GameScreen({
   const isMyTurn = isActive && game.turnPlayerId === playerId
   const canAct = isActive && isMyTurn && online && synchronized && !pending
   const [resignationOpen, setResignationOpen] = useState(false)
+  const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(
+    game.moveCount || null,
+  )
+  const [ratingOpen, setRatingOpen] = useState(false)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
   )
@@ -81,10 +94,31 @@ export function GameScreen({
     lastMove?.authorPlayerId === playerId
       ? 'ГАААААЛЯ!!'
       : 'низя!'
+  const selectedMove = selectedMoveNumber
+    ? game.moves?.[String(selectedMoveNumber)]
+    : undefined
+  const canRate = Boolean(
+    selectedMove && !selectedMove.rating && online && synchronized && !pending,
+  )
+  const rateSelectedMove = (rating: WordRating) => {
+    if (!selectedMove) {
+      return
+    }
+    setRatingOpen(false)
+    onRateMove(selectedMove.number, rating)
+  }
 
   useEffect(() => {
     setResignationOpen(false)
+    setRatingOpen(false)
+    setSelectedMoveNumber(game.moveCount || null)
   }, [game.id, game.status])
+
+  useEffect(() => {
+    if (!selectedMove || selectedMove.rating) {
+      setRatingOpen(false)
+    }
+  }, [selectedMove])
 
   return (
     <main className="game-page">
@@ -131,6 +165,15 @@ export function GameScreen({
             >
               {isMyTurn ? 'Мой ход' : 'Ход вражины'}
             </span>
+            {canRate && (
+              <button
+                className="secondary-button rating-button"
+                type="button"
+                onClick={() => setRatingOpen(true)}
+              >
+                Оценить
+              </button>
+            )}
             {showRollback && (
               <button
                 className="danger-button rollback-button"
@@ -211,6 +254,7 @@ export function GameScreen({
 
           onSubmitMove(move)
         }}
+        onSelectedMoveChange={setSelectedMoveNumber}
       />
 
       {game.status === 'completed' && (
@@ -233,9 +277,15 @@ export function GameScreen({
                 .filter(
                   (move) => move.authorPlayerId === game.playerIds[0],
                 )
-                .map((move) => (
-                  <li key={move.number}>{move.word}</li>
-                ))}
+                .map((move) => {
+                  const emoji = ratingEmoji(move.rating)
+                  return (
+                    <li key={move.number}>
+                      {move.word}
+                      {emoji && ` ${emoji}`}
+                    </li>
+                  )
+                })}
             </ol>
           </div>
           <div className="move-history-column">
@@ -245,9 +295,15 @@ export function GameScreen({
                 .filter(
                   (move) => move.authorPlayerId === game.playerIds[1],
                 )
-                .map((move) => (
-                  <li key={move.number}>{move.word}</li>
-                ))}
+                .map((move) => {
+                  const emoji = ratingEmoji(move.rating)
+                  return (
+                    <li key={move.number}>
+                      {move.word}
+                      {emoji && ` ${emoji}`}
+                    </li>
+                  )
+                })}
             </ol>
           </div>
         </section>
@@ -292,6 +348,25 @@ export function GameScreen({
                 Ну уж нет!
               </button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {ratingOpen && selectedMove && !selectedMove.rating && (
+        <div className="rating-backdrop" onClick={() => setRatingOpen(false)}>
+          <section
+            className="rating-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Оценить слово ${selectedMove.word}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button type="button" onClick={() => rateSelectedMove('bad')}>
+              Хуйня 🙄
+            </button>
+            <button type="button" onClick={() => rateSelectedMove('great')}>
+              Охуенно ❤️
+            </button>
           </section>
         </div>
       )}

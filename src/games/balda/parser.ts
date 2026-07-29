@@ -49,6 +49,7 @@ const MOVE_FIELDS = new Set([
   'word',
   'points',
   'createdAt',
+  'rating',
 ])
 
 export class GameDataError extends Error {
@@ -203,6 +204,14 @@ function parseMove(value: unknown, key: string): BaldaMove {
     throw new GameDataError(`Move points do not match path at moves.${key}.`)
   }
 
+  if (
+    input.rating !== undefined &&
+    input.rating !== 'bad' &&
+    input.rating !== 'great'
+  ) {
+    throw new GameDataError(`Invalid rating at moves.${key}.`)
+  }
+
   return {
     number,
     authorPlayerId: input.authorPlayerId,
@@ -212,6 +221,7 @@ function parseMove(value: unknown, key: string): BaldaMove {
     word: input.word,
     points,
     createdAt: timestamp(input.createdAt, `moves.${key}.createdAt`),
+    ...(input.rating === undefined ? {} : { rating: input.rating }),
   }
 }
 
