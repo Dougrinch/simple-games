@@ -19,6 +19,7 @@ interface GameBoardProps {
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
   onSelectedMoveChange?: (moveNumber: number | null) => void
+  highlightRequest?: { moveNumber: number; requestId: number } | null
 }
 
 interface GestureState {
@@ -89,6 +90,7 @@ export function GameBoard({
   onCellPress,
   onPathComplete,
   onSelectedMoveChange = ignoreSelectedMoveChange,
+  highlightRequest = null,
 }: GameBoardProps) {
   const lastMove = game.moves?.[String(game.moveCount)]
   const lastMoveNumber = lastMove?.number ?? null
@@ -178,6 +180,12 @@ export function GameBoard({
   ])
 
   useEffect(() => clearSuppressedClick, [clearSuppressedClick])
+
+  useEffect(() => {
+    if (highlightRequest) {
+      highlightMove(highlightRequest.moveNumber)
+    }
+  }, [highlightMove, highlightRequest])
 
   const highlightedMove =
     highlightedMoveState?.gameId === game.id
@@ -384,19 +392,6 @@ export function GameBoard({
               onClick={() => {
                 if (suppressNextClickRef.current) {
                   clearSuppressedClick()
-                  return
-                }
-
-                if (!draft && cell) {
-                  const moveNumber = cell.moveNumber
-                  if (
-                    moveNumber !== null &&
-                    game.moves?.[String(moveNumber)]
-                  ) {
-                    highlightMove(moveNumber)
-                  } else {
-                    clearHighlightedMove()
-                  }
                   return
                 }
 

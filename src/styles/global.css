@@ -728,13 +728,19 @@ button:disabled {
   list-style: none;
 }
 
-.move-history li {
+.move-history li button {
   overflow-wrap: anywhere;
+  width: 100%;
   padding: 6px 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
   font-family: Georgia, serif;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-align: left;
 }
 
 .surrender-button {

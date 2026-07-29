@@ -81,6 +81,10 @@ export function GameScreen({
     game.moveCount || null,
   )
   const [ratingOpen, setRatingOpen] = useState(false)
+  const [highlightRequest, setHighlightRequest] = useState<{
+    moveNumber: number
+    requestId: number
+  } | null>(null)
   const moves = Object.values(game.moves ?? {}).sort(
     (first, second) => second.number - first.number,
   )
@@ -255,6 +259,7 @@ export function GameScreen({
           onSubmitMove(move)
         }}
         onSelectedMoveChange={setSelectedMoveNumber}
+        highlightRequest={highlightRequest}
       />
 
       {game.status === 'completed' && (
@@ -281,8 +286,18 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      {move.word}
-                      {emoji && ` ${emoji}`}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setHighlightRequest((current) => ({
+                            moveNumber: move.number,
+                            requestId: (current?.requestId ?? 0) + 1,
+                          }))
+                        }
+                      >
+                        {move.word}
+                        {emoji && ` ${emoji}`}
+                      </button>
                     </li>
                   )
                 })}
@@ -299,8 +314,18 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      {move.word}
-                      {emoji && ` ${emoji}`}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setHighlightRequest((current) => ({
+                            moveNumber: move.number,
+                            requestId: (current?.requestId ?? 0) + 1,
+                          }))
+                        }
+                      >
+                        {move.word}
+                        {emoji && ` ${emoji}`}
+                      </button>
                     </li>
                   )
                 })}
