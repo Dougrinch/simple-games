@@ -353,6 +353,37 @@ describe('GameScreen', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('keeps the rating popup closed after the word selection expires', () => {
+    vi.useFakeTimers()
+
+    try {
+      render(<GameScreen {...gameScreenProps({ game: movedGame() })} />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Оценить' }))
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(3_000)
+      })
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Оценить' }),
+      ).not.toBeInTheDocument()
+
+      fireEvent.click(
+        screen.getByRole('gridcell', {
+          name: 'Клетка 1, 0, буква А',
+        }),
+      )
+
+      expect(screen.getByRole('button', { name: 'Оценить' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('shows only the saved rating emoji next to the word', () => {
     const ratedGame = movedGame()
     const move = ratedGame.moves?.['1']

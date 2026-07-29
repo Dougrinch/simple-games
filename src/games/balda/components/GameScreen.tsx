@@ -47,6 +47,12 @@ function playerName(
   return profiles[playerId]?.displayName ?? playerId
 }
 
+function ratingEmoji(rating: WordRating | undefined): string | null {
+  if (rating === 'bad') return '🙄'
+  if (rating === 'great') return '❤️'
+  return null
+}
+
 export function GameScreen({
   game,
   playerId,
@@ -109,10 +115,10 @@ export function GameScreen({
   }, [game.id, game.status])
 
   useEffect(() => {
-    if (selectedMove?.rating) {
+    if (!selectedMove || selectedMove.rating) {
       setRatingOpen(false)
     }
-  }, [selectedMove?.rating])
+  }, [selectedMove])
 
   return (
     <main className="game-page">
@@ -271,16 +277,15 @@ export function GameScreen({
                 .filter(
                   (move) => move.authorPlayerId === game.playerIds[0],
                 )
-                .map((move) => (
-                  <li key={move.number}>
-                    {move.word}{' '}
-                    {move.rating === 'bad'
-                      ? '🙄'
-                      : move.rating === 'great'
-                        ? '❤️'
-                        : ''}
-                  </li>
-                ))}
+                .map((move) => {
+                  const emoji = ratingEmoji(move.rating)
+                  return (
+                    <li key={move.number}>
+                      {move.word}
+                      {emoji && ` ${emoji}`}
+                    </li>
+                  )
+                })}
             </ol>
           </div>
           <div className="move-history-column">
@@ -290,16 +295,15 @@ export function GameScreen({
                 .filter(
                   (move) => move.authorPlayerId === game.playerIds[1],
                 )
-                .map((move) => (
-                  <li key={move.number}>
-                    {move.word}{' '}
-                    {move.rating === 'bad'
-                      ? '🙄'
-                      : move.rating === 'great'
-                        ? '❤️'
-                        : ''}
-                  </li>
-                ))}
+                .map((move) => {
+                  const emoji = ratingEmoji(move.rating)
+                  return (
+                    <li key={move.number}>
+                      {move.word}
+                      {emoji && ` ${emoji}`}
+                    </li>
+                  )
+                })}
             </ol>
           </div>
         </section>
