@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react'
-import { loadEnv, type Plugin } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 
 interface ReleaseNote {
   id: number
@@ -98,16 +97,5 @@ export default defineConfig(({ mode }) => {
       react(),
       appMetadataPlugin({ buildId, builtAt, releaseNotes }),
     ],
-    test: {
-      environment: 'jsdom',
-      exclude: ['tests/rules/**', 'node_modules/**', 'dist/**'],
-      include: ['src/**/*.test.{ts,tsx}'],
-      setupFiles: './src/test/setup.ts',
-      coverage: {
-        provider: 'v8',
-        reporter: ['text', 'html'],
-        reportsDirectory: './coverage',
-      },
-    },
   }
 })

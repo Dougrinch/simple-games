@@ -26,6 +26,7 @@ push-worker/
 
 ```bash
 npm run push:check
+npm run test:worker
 ```
 
 Production VAPID public key хранится в `push-worker/wrangler.jsonc`, а private

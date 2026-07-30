@@ -1,10 +1,11 @@
 import {
   createExecutionContext,
+  SELF,
   waitOnExecutionContext,
 } from 'cloudflare:test'
 import { env } from 'cloudflare:workers'
 import webpush from 'web-push'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   handleRequest,
@@ -15,6 +16,7 @@ import {
 
 const TEST_APP_URL = 'https://app.example.test/'
 const TEST_ORIGIN = 'https://app.example.test'
+const TEST_VAPID_PUBLIC_KEY = 'test-vapid-public-key'
 const TEST_VAPID_PRIVATE_KEY = 'test-vapid-private-key'
 
 declare module 'cloudflare:workers' {
@@ -62,11 +64,47 @@ function request(
   return new Request(`https://push.example${path}`, { ...init, headers })
 }
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn<FetchFunction>(async (input) => {
+      throw new Error(
+        `Unexpected network request in Worker test: ${String(input)}`,
+      )
+    }),
+  )
+})
+
 afterEach(() => {
+  vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
 
 describe('push Worker API', () => {
+  it('serves the configured Worker entrypoint through Workerd', async () => {
+    const response = await SELF.fetch(
+      'https://push.example/vapid-public-key',
+      { headers: { origin: TEST_ORIGIN } },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      publicKey: TEST_VAPID_PUBLIC_KEY,
+    })
+    expect(response.headers.get('access-control-allow-origin')).toBe(
+      TEST_ORIGIN,
+    )
+    expect(env).toMatchObject({
+      APP_URL: TEST_APP_URL,
+      ALLOWED_ORIGINS: TEST_ORIGIN,
+      FIREBASE_API_KEY: 'test-firebase-api-key',
+      FIREBASE_DATABASE_URL: 'https://firebase.example.test/',
+      VAPID_PUBLIC_KEY: TEST_VAPID_PUBLIC_KEY,
+      VAPID_SUBJECT: 'mailto:test@example.test',
+      VAPID_PRIVATE_KEY: TEST_VAPID_PRIVATE_KEY,
+    })
+  })
+
   it('returns the VAPID public key with exact CORS headers', async () => {
     const ctx = createExecutionContext()
     const response = await handleRequest(

@@ -10,7 +10,7 @@
     "types:check": "wrangler types --check",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run types:check && npm run typecheck && npm test"
+    "check": "npm run types:check && npm run typecheck"
   },
   "dependencies": {
     "web-push": "^3.6.7"

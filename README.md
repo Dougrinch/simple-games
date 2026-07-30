@@ -74,17 +74,21 @@ npm run lint
 npm run typecheck
 npm run seed:validate
 npm run release-notes:check
-npm test
-npm run test:rules
+npm run test:unit
+npm run test:firebase
+npm run test:worker
 npm run push:check
-npm run test:coverage
+npm run test:unit:coverage
 npm run build
 npm run check
 ```
 
-`npm run test:rules` запускает Realtime Database Emulator. Интеграционные тесты
-проверяют границу доступа, конкурентное создание партии, атомарный ход,
-конфликт ревизий, откат и финальный результат.
+`npm run test:unit` запускает unit- и component-тесты приложения без чтения
+локальной production-конфигурации. `npm run test:firebase` поднимает отдельный
+Realtime Database Emulator и проверяет границу доступа, конкурентное создание
+партии, атомарный ход, конфликт ревизий, откат и финальный результат.
+`npm run test:worker` запускает Worker в локальном Workerd с отдельной тестовой
+конфигурацией.
 
 ## Архитектура
 
