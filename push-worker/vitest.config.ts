@@ -4,12 +4,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './wrangler.jsonc' },
-      miniflare: {
-        bindings: {
-          VAPID_PRIVATE_KEY: 'test-private-key',
-        },
-      },
+      wrangler: { configPath: './wrangler.test.jsonc' },
     }),
   ],
   test: {

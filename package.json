@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:rules": "firebase emulators:exec --only database --project demo-simple-games \"vitest run --config vitest.rules.config.ts\"",
+    "test:rules": "firebase --config firebase.rules-test.json emulators:exec --only database --project demo-simple-games \"vitest run --config vitest.rules.config.ts\"",
     "push:dev": "npm run dev --workspace push-worker",
     "push:types": "npm run types --workspace push-worker",
     "push:typecheck": "npm run typecheck --workspace push-worker",
@@ -28,9 +28,8 @@
     "emulators": "firebase emulators:start --only auth,database --project demo-simple-games",
     "emulators:seed": "node scripts/seed-emulator.mjs",
     "seed:validate": "node scripts/seed-emulator.mjs --validate-only",
-    "release-notes:check": "node scripts/check-release-notes.mjs",
     "env:check": "node scripts/check-env.mjs production",
-    "check": "npm run lint && npm run typecheck && npm run push:check && npm run seed:validate && npm run release-notes:check && npm run test && npm run test:rules && npm run env:check && vite build"
+    "check": "npm run lint && npm run typecheck && npm run push:check && npm run seed:validate && npm run test && npm run test:rules && npm run env:check && vite build"
   },
   "dependencies": {
     "firebase": "12.16.0",

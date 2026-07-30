@@ -13,6 +13,10 @@ import {
   type WorkerDependencies,
 } from '../src'
 
+const TEST_APP_URL = 'https://app.example.test/'
+const TEST_ORIGIN = 'https://app.example.test'
+const TEST_VAPID_PRIVATE_KEY = 'test-vapid-private-key'
+
 declare module 'cloudflare:workers' {
   interface ProvidedEnv extends Env {}
 }
@@ -51,7 +55,7 @@ function dependencies(
 function request(
   path: string,
   init: RequestInit = {},
-  origin = 'https://dougrinch.com',
+  origin = TEST_ORIGIN,
 ): Request {
   const headers = new Headers(init.headers)
   headers.set('origin', origin)
@@ -77,7 +81,7 @@ describe('push Worker API', () => {
       publicKey: env.VAPID_PUBLIC_KEY,
     })
     expect(response.headers.get('access-control-allow-origin')).toBe(
-      'https://dougrinch.com',
+      TEST_ORIGIN,
     )
     expect(response.headers.get('vary')).toBe('Origin')
   })
@@ -229,14 +233,14 @@ describe('push Worker API', () => {
       'Соперник сделал ход. Теперь твоя очередь.',
     )
     expect(JSON.parse(sender.mock.calls[0]?.[1] ?? '{}')).toMatchObject({
-      data: { url: 'https://dougrinch.com/simple-games/' },
+      data: { url: TEST_APP_URL },
     })
     expect(sender.mock.calls[0]?.[2]).toMatchObject({
       urgency: 'high',
       vapidDetails: {
         subject: env.VAPID_SUBJECT,
         publicKey: env.VAPID_PUBLIC_KEY,
-        privateKey: 'test-private-key',
+        privateKey: TEST_VAPID_PRIVATE_KEY,
       },
     })
   })

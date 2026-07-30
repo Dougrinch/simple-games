@@ -1,0 +1,16 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "simple-games-push-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "APP_URL": "https://app.example.test/",
+    "ALLOWED_ORIGINS": "https://app.example.test",
+    "FIREBASE_API_KEY": "test-firebase-api-key",
+    "FIREBASE_DATABASE_URL": "https://firebase.example.test/",
+    "VAPID_PUBLIC_KEY": "test-vapid-public-key",
+    "VAPID_SUBJECT": "mailto:test@example.test",
+    "VAPID_PRIVATE_KEY": "test-vapid-private-key"
+  }
+}
