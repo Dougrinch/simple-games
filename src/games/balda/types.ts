@@ -6,7 +6,7 @@ export type CellSource = 'start' | 'move'
 export type RowIndex = 0 | 1 | 2 | 3 | 4
 export type ColumnIndex = 0 | 1 | 2 | 3 | 4
 export type CellKey = `${RowIndex}_${ColumnIndex}`
-export type WordRating = 'bad' | 'great'
+export type WordRating = 'bad' | 'great' | 'angry'
 
 export interface Coordinate {
   row: RowIndex

@@ -51,6 +51,7 @@ function playerName(
 function ratingEmoji(rating: WordRating | undefined): string | null {
   if (rating === 'bad') return '🙄'
   if (rating === 'great') return '❤️'
+  if (rating === 'angry') return '🤬'
   return null
 }
 
@@ -456,6 +457,9 @@ export function GameScreen({
             </button>
             <button type="button" onClick={() => rateSelectedMove('great')}>
               Охуенно ❤️
+            </button>
+            <button type="button" onClick={() => rateSelectedMove('angry')}>
+              Иди нахрен 🤬
             </button>
           </section>
         </div>
