@@ -1,24 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-const PRODUCT_ENV_NAMES = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_AUTH_DOMAIN',
-  'VITE_FIREBASE_DATABASE_URL',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_FIREBASE_STORAGE_BUCKET',
-  'VITE_FIREBASE_MESSAGING_SENDER_ID',
-  'VITE_FIREBASE_APP_ID',
-  'VITE_BASE_PATH',
-  'VITE_USE_FIREBASE_EMULATORS',
-  'VITE_PUSH_WORKER_URL',
-  'VITE_BUILD_ID',
-] as const
-
-for (const name of PRODUCT_ENV_NAMES) {
-  delete process.env[name]
-}
-
 export default defineConfig({
   envDir: false,
   define: {

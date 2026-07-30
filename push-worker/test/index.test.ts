@@ -1,9 +1,8 @@
 import {
   createExecutionContext,
-  SELF,
   waitOnExecutionContext,
 } from 'cloudflare:test'
-import { env } from 'cloudflare:workers'
+import { env, exports } from 'cloudflare:workers'
 import webpush from 'web-push'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -82,7 +81,7 @@ afterEach(() => {
 
 describe('push Worker API', () => {
   it('serves the configured Worker entrypoint through Workerd', async () => {
-    const response = await SELF.fetch(
+    const response = await exports.default.fetch(
       'https://push.example/vapid-public-key',
       { headers: { origin: TEST_ORIGIN } },
     )

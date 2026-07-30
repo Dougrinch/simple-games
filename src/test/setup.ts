@@ -14,6 +14,14 @@ const EXPECTED_UNIT_ENV = {
   VITE_PUSH_WORKER_URL: 'https://push.example.test/',
 } as const
 
+class BlockedNetworkTransport {
+  constructor(target?: unknown) {
+    throw new Error(
+      `Unexpected network transport in unit test: ${String(target ?? 'unknown target')}`,
+    )
+  }
+}
+
 beforeAll(() => {
   for (const [name, expected] of Object.entries(EXPECTED_UNIT_ENV)) {
     const actual: unknown = import.meta.env[name]
@@ -34,6 +42,8 @@ beforeEach(() => {
       ),
     ),
   )
+  vi.stubGlobal('XMLHttpRequest', BlockedNetworkTransport)
+  vi.stubGlobal('WebSocket', BlockedNetworkTransport)
 })
 
 afterEach(() => {
