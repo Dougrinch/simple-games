@@ -142,19 +142,39 @@ npx firebase database:set / firebase-data/seed.json \
 Это именно Repository Variables, не Secrets. Workflow прервёт сборку с понятной
 ошибкой, если хотя бы одно значение отсутствует.
 
+### Добавить Actions Repository Secrets
+
+Откройте `Settings → Secrets and variables → Actions → Secrets` и добавьте:
+
+- `CLOUDFLARE_ACCOUNT_ID` — идентификатор Cloudflare account;
+- `CLOUDFLARE_API_TOKEN` — API token с минимальными правами для публикации
+  production Worker в выбранном account.
+
+Эти значения доступны только отдельному deploy-job. Проверка и сборка Worker
+artifact выполняются без Cloudflare credentials.
+
+### Защитить `main`
+
+Создайте активный Ruleset для default branch: требуйте pull request, актуальность
+ветки относительно `main` и успешный статус `Production build`. Не добавляйте
+bypass actors и не разрешайте прямые push.
+
 ### Включить Pages
 
 1. Откройте `Settings → Pages`.
 2. В `Build and deployment → Source` выберите `GitHub Actions`.
 3. Запушьте изменения в `main` или вручную запустите workflow
-   `Checks and GitHub Pages deployment` на вкладке Actions.
-4. Дождитесь успешных jobs `Checks and build` и `Deploy`.
+   `Production checks and deployments` из ветки `main` на вкладке Actions.
+4. Дождитесь успешных jobs `Production build`, `Deploy GitHub Pages` и, при
+   изменениях Worker, `Deploy Push Worker`.
 
 Workflow устанавливает зависимости через lock-файл, проверяет стиль и типы,
-запускает тесты приложения и Firebase Security Rules, собирает Vite и публикует
-только каталог `dist`. Он не развёртывает `database.rules.json`: после изменения
-правил владелец отдельно выполняет `npx firebase deploy --only database
---project <FIREBASE_PROJECT_ID>`.
+запускает тесты приложения и Firebase Security Rules, а затем собирает Vite.
+Pull request и ручной запуск другой ветки на этом заканчиваются. Только `main`
+создаёт и публикует Pages artifact, а при изменениях после последнего полностью
+успешного workflow — готовый Push Worker artifact. Workflow не развёртывает
+`database.rules.json`: после изменения правил владелец отдельно выполняет
+`npx firebase deploy --only database --project <FIREBASE_PROJECT_ID>`.
 
 Ожидаемый URL:
 
@@ -170,6 +190,8 @@ Workflow устанавливает зависимости через lock-фа�
 - `meta/schemaVersion` равен `1`.
 - `dictionaries/balda/startWords/count` равен `1554`.
 - В GitHub заданы все девять Repository Variables.
+- В GitHub заданы оба Cloudflare Repository Secrets.
+- Ruleset для `main` требует успешный `Production build`.
 - Pages использует GitHub Actions.
 - Workflow на `main` проходит полностью.
 

@@ -1,22 +1,28 @@
-name: Checks and GitHub Pages deployment
+name: Production checks and deployments
 
 on:
+  pull_request:
   push:
     branches:
-      - main
+      - "**"
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  queue: ${{ github.ref == 'refs/heads/main' && 'max' || 'single' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
-    name: Checks and build
+    name: Production build
     runs-on: ubuntu-latest
+    outputs:
+      push_worker_changed: ${{ steps.push_worker_changes.outputs.changed }}
+      wrangler_version: ${{ steps.wrangler_version.outputs.version }}
     env:
       CI: true
     steps:
@@ -38,10 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check and build application
+      - name: Check project
+        run: npm run check
+
+      - name: Build application
         run: npm run production:build
         env:
-          VAPID_PRIVATE_KEY: test-private-key
           VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_DATABASE_URL: ${{ vars.VITE_FIREBASE_DATABASE_URL }}
@@ -54,16 +62,91 @@ jobs:
           VITE_USE_FIREBASE_EMULATORS: "false"
           VITE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
+      - name: Find last successful production run
+        id: production_baseline
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v9
+        with:
+          result-encoding: string
+          script: |
+            const events = ['push', 'workflow_dispatch']
+            const responses = await Promise.all(
+              events.map((event) =>
+                github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'deploy-pages.yml',
+                  branch: 'main',
+                  event,
+                  status: 'success',
+                  per_page: 1,
+                }),
+              ),
+            )
+            const runs = responses.flatMap(({ data }) => data.workflow_runs)
+            runs.sort(
+              (left, right) =>
+                new Date(right.run_started_at ?? right.created_at).getTime() -
+                new Date(left.run_started_at ?? left.created_at).getTime(),
+            )
+            return runs[0]?.head_sha ?? ''
+
+      - name: Detect Push Worker changes
+        id: push_worker_changes
+        if: github.ref == 'refs/heads/main'
+        env:
+          BASELINE_SHA: ${{ steps.production_baseline.outputs.result }}
+        run: |
+          if [[ -n "$BASELINE_SHA" ]] && ! git cat-file -e "$BASELINE_SHA^{commit}"; then
+            if ! git fetch --no-tags --depth=1 origin "$BASELINE_SHA"; then
+              echo "::warning::Could not fetch the production baseline; treating Push Worker as changed."
+            fi
+          fi
+
+          if [[ -z "$BASELINE_SHA" ]] || ! git cat-file -e "$BASELINE_SHA^{commit}"; then
+            changed=true
+          elif git diff --quiet "$BASELINE_SHA" "$GITHUB_SHA" -- push-worker/; then
+            changed=false
+          else
+            changed=true
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle Push Worker
+        if: steps.push_worker_changes.outputs.changed == 'true'
+        run: npm run production:push:bundle
+
+      - name: Read Wrangler version
+        id: wrangler_version
+        if: steps.push_worker_changes.outputs.changed == 'true'
+        run: |
+          version="$(node -p 'require("./package-lock.json").packages["node_modules/wrangler"].version')"
+          echo "$version" > push-worker/dist/wrangler-version.txt
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Push Worker artifact
+        if: steps.push_worker_changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: push-worker-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            push-worker/dist/
+            push-worker/wrangler.jsonc
+          if-no-files-found: error
+
       - name: Configure GitHub Pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
 
       - name: Upload GitHub Pages artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
-  deploy:
-    name: Deploy
+  deploy-pages:
+    name: Deploy GitHub Pages
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -77,3 +160,31 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-push-worker:
+    name: Deploy Push Worker
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      needs.build.outputs.push_worker_changed == 'true'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download Push Worker artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: push-worker-${{ github.run_id }}-${{ github.run_attempt }}
+          path: push-worker
+
+      - name: Verify Wrangler version
+        env:
+          EXPECTED_WRANGLER_VERSION: ${{ needs.build.outputs.wrangler_version }}
+        run: test "$(cat push-worker/dist/wrangler-version.txt)" = "$EXPECTED_WRANGLER_VERSION"
+
+      - name: Deploy Push Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ needs.build.outputs.wrangler_version }}
+          workingDirectory: push-worker
+          command: deploy dist/index.js --no-bundle --config wrangler.jsonc --env production

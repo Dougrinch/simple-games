@@ -620,8 +620,16 @@ curl http://localhost:8787/vapid-public-key
 Деплой:
 
 ```bash
+npm run check
+npm run production:push:bundle
 npm run production:push:deploy
 ```
+
+`production:push:bundle` собирает готовый Worker в `push-worker/dist`, а
+`production:push:deploy` публикует именно этот bundle с `--no-bundle`. После
+изменения Worker, его dependencies или `wrangler.jsonc` bundle нужно создать
+заново. В GitHub Actions эти команды разделены между build- и deploy-jobs через
+неизменяемый workflow artifact.
 
 Полученный URL записать в:
 

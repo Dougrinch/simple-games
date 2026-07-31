@@ -71,19 +71,10 @@ npm run dev:push:start
 ## Проверки
 
 ```bash
-npm run shared:lint
-npm run shared:app:typecheck
-npm run shared:seed:validate
-npm run test:unit
-npm run test:firebase
-npm run test:worker
-npm run shared:push:check
-npm run production:push:types:check
-npm run test:unit:coverage
-npm run test:coverage
-npm run shared:check
-npm run production:app:build
-npm run production:check
+npm run check
+npm run coverage
+npm run production:build
+npm run production:push:bundle
 ```
 
 `npm run test:unit` запускает unit- и component-тесты приложения без чтения
@@ -155,9 +146,11 @@ npx firebase deploy --only database --project <FIREBASE_PROJECT_ID>
 ```
 
 Повторно импортировать `firebase-data/seed.json` поверх рабочей production-базы
-нельзя. Push в `main` запускает `.github/workflows/deploy-pages.yml`, который
-проверяет проект, собирает Vite с `VITE_BASE_PATH=/simple-games/` и публикует
-`dist` через GitHub Pages.
+нельзя. Любой pull request и ручной запуск из любой ветки проверяют проект и
+собирают Vite. Push в `main` или ручной запуск из `main` дополнительно создают
+готовые artifacts и публикуют приложение через GitHub Pages. Если с последнего
+успешного production workflow изменился `push-worker/`, тот же запуск публикует
+готовый Worker bundle в Cloudflare без повторной сборки.
 
 ## Release notes и обновление клиента
 

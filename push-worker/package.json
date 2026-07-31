@@ -11,7 +11,8 @@
     "wrangler:types:check": "npm run production:wrangler:types:generate -- --check",
     "check": "npm run lint && npm run typecheck && npm run wrangler:types:check && npm run test",
     "production:wrangler:types:generate": "wrangler types --env production --strict-vars false",
-    "production:deploy": "npm run check && wrangler deploy --env production",
+    "production:bundle": "wrangler deploy --env production --dry-run --outdir dist",
+    "production:deploy": "wrangler deploy dist/index.js --no-bundle --config wrangler.jsonc --env production",
     "dev:start": "wrangler dev --env development"
   },
   "dependencies": {
