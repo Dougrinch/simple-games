@@ -1,6 +1,10 @@
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
 import { defineConfig } from 'vitest/config'
 
+import { assertTestNodeVersion } from '../scripts/assert-test-node-version'
+
+assertTestNodeVersion()
+
 export default defineConfig({
   plugins: [
     cloudflareTest({

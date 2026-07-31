@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
+import { assertTestNodeVersion } from './scripts/assert-test-node-version'
 import { appCoverage } from './vitest.coverage.config.ts'
+
+assertTestNodeVersion()
 
 export default defineConfig({
   envDir: false,
