@@ -18,28 +18,29 @@ Production URL: <https://dougrinch.com/simple-games/>.
 ```bash
 nvm use
 npm ci
-cp .env.emulator.example .env.local
+cp .env.emulator.example .env.development.local
 ```
 
 Запустите три процесса:
 
 ```bash
 # Терминал 1
-npm run emulators
+npm run dev:firebase:start
 
 # Терминал 2
-npm run emulators:seed
+npm run dev:firebase:seed
 
 # Терминал 3
-npm run dev
+npm run dev:app:start
 ```
 
 Для локальной проверки push дополнительно скопируйте
-`push-worker/.dev.vars.example` в `push-worker/.dev.vars`, заполните
-`VAPID_PRIVATE_KEY` и запустите:
+`push-worker/.dev.vars.development.example` в
+`push-worker/.dev.vars.development`, заполните локальную пару
+`VAPID_PUBLIC_KEY` и `VAPID_PRIVATE_KEY` и запустите:
 
 ```bash
-npm run push:dev
+npm run dev:push:start
 ```
 
 - приложение: <http://localhost:5173>
@@ -70,17 +71,19 @@ npm run push:dev
 ## Проверки
 
 ```bash
-npm run lint
-npm run typecheck
-npm run seed:validate
-npm run release-notes:check
+npm run shared:lint
+npm run shared:app:typecheck
+npm run shared:seed:validate
 npm run test:unit
 npm run test:firebase
 npm run test:worker
-npm run push:check
+npm run shared:push:check
+npm run production:push:types:check
 npm run test:unit:coverage
-npm run build
-npm run check
+npm run test:coverage
+npm run shared:check
+npm run production:app:build
+npm run production:check
 ```
 
 `npm run test:unit` запускает unit- и component-тесты приложения без чтения
@@ -134,9 +137,11 @@ UI не обращается к Firebase напрямую. Создание вы
 
 ## Firebase и публикация
 
-Production-переменные, включая `VITE_PUSH_WORKER_URL`, находятся в `.env.local`
-и GitHub Actions Repository Variables. `.env.local` исключён из Git. Пошаговая
-настройка сторонних сервисов описана в
+Локальные production-переменные, включая `VITE_PUSH_WORKER_URL`, находятся в
+`.env.production.local`, а development-переменные для эмуляторов — в
+`.env.development.local`. Оба файла исключены из Git. В GitHub Actions
+production-значения задаются через Repository Variables. Пошаговая настройка
+сторонних сервисов описана в
 [docs/external-services.md](docs/external-services.md).
 
 Отдельная инструкция по бесплатным системным push-уведомлениям через Cloudflare
@@ -168,8 +173,8 @@ npx firebase deploy --only database --project <FIREBASE_PROJECT_ID>
 }
 ```
 
-`npm run release-notes:check` проверяет формат файла и каждый коммит после его
-создания. Эта же проверка обязательна в pull request и перед production-деплоем.
+Production-сборка проверяет базовую структуру `release-notes.json` при чтении
+файла.
 
 Production-сборка публикует маленький `version.json` и отдельный
 `release-notes.json`. Открытый клиент проверяет только версию раз в минуту, при

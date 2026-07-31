@@ -25,7 +25,8 @@ push-worker/
 Автоматические проверки:
 
 ```bash
-npm run push:check
+npm run shared:push:check
+npm run production:push:types:check
 npm run test:worker
 ```
 
@@ -161,25 +162,39 @@ Public key можно хранить в конфигурации. Private key н
 
 ## 6. Настроить `wrangler.jsonc`
 
-Файл создаётся генератором Worker. Это аналог `firebase.json` для Cloudflare:
+Файл разделён на безопасный top-level без рабочих bindings и два явных
+окружения. Development использует только локальные эмуляторы, production —
+опубликованные сервисы. Ниже показана сокращённая структура; источником истины
+остаётся `push-worker/wrangler.jsonc`:
 
 ```jsonc
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "simple-games-push",
+  "name": "simple-games-push-unconfigured",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-27",
   "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "APP_URL": "https://dougrinch.com/simple-games/",
-    "ALLOWED_ORIGINS": "https://dougrinch.com,https://dougrinch.github.io,http://localhost:5173",
-    "FIREBASE_API_KEY": "<VITE_FIREBASE_API_KEY>",
-    "FIREBASE_DATABASE_URL": "<VITE_FIREBASE_DATABASE_URL>",
-    "VAPID_PUBLIC_KEY": "<publicKey>",
-    "VAPID_SUBJECT": "https://dougrinch.com/simple-games/"
-  },
-  "secrets": {
-    "required": ["VAPID_PRIVATE_KEY"]
+  "env": {
+    "development": {
+      "vars": {
+        "APP_URL": "http://localhost:5173/",
+        "FIREBASE_AUTH_BASE_URL": "http://127.0.0.1:9099/identitytoolkit.googleapis.com",
+        "FIREBASE_DATABASE_URL": "http://127.0.0.1:9000/",
+        "FIREBASE_DATABASE_NAMESPACE": "demo-simple-games-default-rtdb"
+      }
+    },
+    "production": {
+      "name": "simple-games-push",
+      "vars": {
+        "APP_URL": "https://dougrinch.com/simple-games/",
+        "FIREBASE_AUTH_BASE_URL": "https://identitytoolkit.googleapis.com",
+        "FIREBASE_DATABASE_URL": "<VITE_FIREBASE_DATABASE_URL>",
+        "VAPID_PUBLIC_KEY": "<publicKey>"
+      },
+      "secrets": {
+        "required": ["VAPID_PRIVATE_KEY"]
+      }
+    }
   }
 }
 ```
@@ -187,22 +202,24 @@ Public key можно хранить в конфигурации. Private key н
 После изменения bindings или переменных сгенерировать типы:
 
 ```bash
-npx wrangler types
+npm run production:wrangler:types:generate
 ```
 
 Для локальной разработки создать игнорируемый файл
-`push-worker/.dev.vars`:
+`push-worker/.dev.vars.development` из одноимённого example-файла:
 
 ```dotenv
+VAPID_PUBLIC_KEY=<localPublicKey>
 VAPID_PRIVATE_KEY=<privateKey>
 ```
 
-Убедиться, что `.dev.vars` находится в `push-worker/.gitignore`.
+Локальная пара должна отличаться от production-пары. Файл
+`.dev.vars.development` находится в `push-worker/.gitignore`.
 
 Загрузить production-секрет:
 
 ```bash
-npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY --env production --config push-worker/wrangler.jsonc
 ```
 
 ## 7. API Worker
@@ -591,7 +608,7 @@ void notifyOtherPlayer().catch((error: unknown) => {
 Локальный Worker:
 
 ```bash
-npm run push:dev
+npm run dev:push:start
 ```
 
 Проверить public key:
@@ -603,12 +620,12 @@ curl http://localhost:8787/vapid-public-key
 Деплой:
 
 ```bash
-npm run deploy --workspace push-worker
+npm run production:push:deploy
 ```
 
 Полученный URL записать в:
 
-- `.env.local` как `VITE_PUSH_WORKER_URL`;
+- `.env.production.local` как `VITE_PUSH_WORKER_URL`;
 - GitHub Repository Variable `VITE_PUSH_WORKER_URL`;
 - список обязательных production-переменных `scripts/check-env.mjs`.
 
@@ -625,7 +642,7 @@ npm run deploy --workspace push-worker
 Production-логи:
 
 ```bash
-npx wrangler tail --config push-worker/wrangler.jsonc
+npx wrangler tail --env production --config push-worker/wrangler.jsonc
 ```
 
 Не логировать Firebase ID token, VAPID private key или полный push endpoint.

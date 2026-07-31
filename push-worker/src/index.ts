@@ -127,8 +127,9 @@ async function authenticatePlayer(
   let response: Response
 
   try {
+    const authBaseUrl = env.FIREBASE_AUTH_BASE_URL.replace(/\/$/u, '')
     response = await dependencies.fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(env.FIREBASE_API_KEY)}`,
+      `${authBaseUrl}/v1/accounts:lookup?key=${encodeURIComponent(env.FIREBASE_API_KEY)}`,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -215,10 +216,20 @@ async function readSubscriptions(
   env: Env,
   dependencies: WorkerDependencies,
 ): Promise<PushSubscription[]> {
-  const databaseUrl = env.FIREBASE_DATABASE_URL.replace(/\/$/u, '')
-  const response = await dependencies.fetch(
-    `${databaseUrl}/pushSubscriptions/${recipientPlayerId}.json?auth=${encodeURIComponent(idToken)}`,
+  const databaseUrl = new URL(
+    `pushSubscriptions/${recipientPlayerId}.json`,
+    env.FIREBASE_DATABASE_URL.endsWith('/')
+      ? env.FIREBASE_DATABASE_URL
+      : `${env.FIREBASE_DATABASE_URL}/`,
   )
+  databaseUrl.searchParams.set('auth', idToken)
+
+  const databaseNamespace = env.FIREBASE_DATABASE_NAMESPACE.trim()
+  if (databaseNamespace) {
+    databaseUrl.searchParams.set('ns', databaseNamespace)
+  }
+
+  const response = await dependencies.fetch(databaseUrl)
 
   if (!response.ok) {
     throw new HttpError(

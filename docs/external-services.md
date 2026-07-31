@@ -16,7 +16,8 @@
    скопируйте значения объекта `firebaseConfig`. Поля `databaseURL` на этом
    этапе может не быть: оно относится к Realtime Database, которую нужно создать
    отдельно по инструкции ниже.
-4. Создайте локальный `.env.local` на основе `.env.example` и сопоставьте поля:
+4. Создайте локальный `.env.production.local` на основе `.env.example` и
+   сопоставьте поля:
 
 | Значение Firebase | Переменная |
 |---|---|
@@ -28,8 +29,7 @@
 | `messagingSenderId` | `VITE_FIREBASE_MESSAGING_SENDER_ID` |
 | `appId` | `VITE_FIREBASE_APP_ID` |
 
-Для локального запуска с настоящим Firebase, без эмуляторов, в `.env.local`
-оставьте:
+Для локальной production-сборки в `.env.production.local` оставьте:
 
 ```dotenv
 VITE_BASE_PATH=/
@@ -137,6 +137,7 @@ npx firebase database:set / firebase-data/seed.json \
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_BASE_PATH` со значением `/simple-games/`
+- `VITE_PUSH_WORKER_URL`
 
 Это именно Repository Variables, не Secrets. Workflow прервёт сборку с понятной
 ошибкой, если хотя бы одно значение отсутствует.
@@ -168,7 +169,7 @@ Workflow устанавливает зависимости через lock-фа�
 - Rules развёрнуты из `database.rules.json`.
 - `meta/schemaVersion` равен `1`.
 - `dictionaries/balda/startWords/count` равен `1554`.
-- В GitHub заданы все восемь Repository Variables.
+- В GitHub заданы все девять Repository Variables.
 - Pages использует GitHub Actions.
 - Workflow на `main` проходит полностью.
 

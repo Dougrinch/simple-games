@@ -8,7 +8,9 @@
     "APP_URL": "https://app.example.test/",
     "ALLOWED_ORIGINS": "https://app.example.test",
     "FIREBASE_API_KEY": "test-firebase-api-key",
+    "FIREBASE_AUTH_BASE_URL": "https://identitytoolkit.example.test",
     "FIREBASE_DATABASE_URL": "https://firebase.example.test/",
+    "FIREBASE_DATABASE_NAMESPACE": "",
     "VAPID_PUBLIC_KEY": "test-vapid-public-key",
     "VAPID_SUBJECT": "mailto:test@example.test",
     "VAPID_PRIVATE_KEY": "test-vapid-private-key"

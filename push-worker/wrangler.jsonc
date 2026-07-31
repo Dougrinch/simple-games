@@ -1,19 +1,41 @@
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "simple-games-push",
+  "name": "simple-games-push-unconfigured",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-27",
   "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "APP_URL": "https://dougrinch.com/simple-games/",
-    "ALLOWED_ORIGINS": "https://dougrinch.com,https://dougrinch.github.io,http://localhost:5173",
-    "FIREBASE_API_KEY": "AIzaSyCPZdXRvKh5ciyoyQT8qb_cRkvAJyGmQQE",
-    "FIREBASE_DATABASE_URL": "https://simple-games-4c88c-default-rtdb.europe-west1.firebasedatabase.app/",
-    "VAPID_PUBLIC_KEY": "BHS3T-4zJYjt_nkxSo9qoDUDuBYnJCEyrAbv-oVvWBy8qyx7V_m-4mKDu6yfiYvlUohTT8ocxjlwEhZ7thghH4c",
-    "VAPID_SUBJECT": "https://dougrinch.com/simple-games/"
-  },
-  "secrets": {
-    "required": ["VAPID_PRIVATE_KEY"]
+  "env": {
+    "development": {
+      "name": "simple-games-push-development",
+      "vars": {
+        "APP_URL": "http://localhost:5173/",
+        "ALLOWED_ORIGINS": "http://localhost:5173",
+        "FIREBASE_API_KEY": "demo-api-key",
+        "FIREBASE_AUTH_BASE_URL": "http://127.0.0.1:9099/identitytoolkit.googleapis.com",
+        "FIREBASE_DATABASE_URL": "http://127.0.0.1:9000/",
+        "FIREBASE_DATABASE_NAMESPACE": "demo-simple-games-default-rtdb",
+        "VAPID_SUBJECT": "mailto:dev@localhost"
+      },
+      "secrets": {
+        "required": ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"]
+      }
+    },
+    "production": {
+      "name": "simple-games-push",
+      "vars": {
+        "APP_URL": "https://dougrinch.com/simple-games/",
+        "ALLOWED_ORIGINS": "https://dougrinch.com,https://dougrinch.github.io",
+        "FIREBASE_API_KEY": "AIzaSyCPZdXRvKh5ciyoyQT8qb_cRkvAJyGmQQE",
+        "FIREBASE_AUTH_BASE_URL": "https://identitytoolkit.googleapis.com",
+        "FIREBASE_DATABASE_URL": "https://simple-games-4c88c-default-rtdb.europe-west1.firebasedatabase.app/",
+        "FIREBASE_DATABASE_NAMESPACE": "",
+        "VAPID_PUBLIC_KEY": "BHS3T-4zJYjt_nkxSo9qoDUDuBYnJCEyrAbv-oVvWBy8qyx7V_m-4mKDu6yfiYvlUohTT8ocxjlwEhZ7thghH4c",
+        "VAPID_SUBJECT": "https://dougrinch.com/simple-games/"
+      },
+      "secrets": {
+        "required": ["VAPID_PRIVATE_KEY"]
+      }
+    }
   },
   "observability": {
     "enabled": true,
