@@ -25,8 +25,9 @@
   },
   "include": [
     "vite.config.ts",
-    "vitest.config.ts",
-    "vitest.rules.config.ts",
+    "vitest.unit.config.ts",
+    "vitest.coverage.config.ts",
+    "vitest.firebase.config.ts",
     "tests"
   ]
 }

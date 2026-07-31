@@ -1,0 +1,9 @@
+prefix_rule(
+    pattern = ["npm", "run", "test"],
+    decision = "allow",
+)
+
+prefix_rule(
+    pattern = ["npm", "run", "test:coverage"],
+    decision = "allow",
+)

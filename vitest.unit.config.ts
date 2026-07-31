@@ -1,6 +1,8 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+import { appCoverage } from './vitest.coverage.config.ts'
+
 export default defineConfig({
   envDir: false,
   define: {
@@ -24,10 +26,6 @@ export default defineConfig({
     },
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: './src/test/setup.ts',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      reportsDirectory: './coverage',
-    },
+    coverage: appCoverage('./coverage/parts/unit'),
   },
 })
