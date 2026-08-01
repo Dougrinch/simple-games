@@ -266,10 +266,9 @@ describe('push Worker API', () => {
       '/pushSubscriptions/hinhillaa.json?auth=valid%2Ftoken',
     )
     expect(sender).toHaveBeenCalledTimes(2)
-    expect(sender.mock.calls[0]?.[1]).toContain(
-      'Соперник сделал ход. Теперь твоя очередь.',
-    )
     expect(JSON.parse(sender.mock.calls[0]?.[1] ?? '{}')).toMatchObject({
+      title: 'Важное сообщение',
+      body: 'Вражина сделала свой ход.',
       data: { url: TEST_APP_URL },
     })
     expect(sender.mock.calls[0]?.[2]).toMatchObject({
