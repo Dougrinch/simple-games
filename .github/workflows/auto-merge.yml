@@ -1,7 +1,7 @@
 name: Enable auto-merge
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - closed
@@ -34,4 +34,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           REPOSITORY: ${{ github.repository }}
-        run: gh api --method DELETE "repos/$REPOSITORY/git/refs/heads/$HEAD_REF"
+        run: |
+          encoded_head_ref="$(jq -rn --arg ref "$HEAD_REF" '$ref | @uri')"
+          gh api --method DELETE \
+            "repos/$REPOSITORY/git/refs/heads/$encoded_head_ref"
