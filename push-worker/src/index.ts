@@ -280,8 +280,8 @@ async function deliverTurnNotifications(
       dependencies,
     )
     const payload = JSON.stringify({
-      title: 'Балда',
-      body: 'Соперник сделал ход. Теперь твоя очередь.',
+      title: 'Важное сообщение',
+      body: 'Вражина сделала свой ход.',
       data: { url: env.APP_URL },
     })
     let sent = 0
