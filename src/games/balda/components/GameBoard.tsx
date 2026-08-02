@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import {
   coordinateToCellKey,
@@ -18,13 +18,7 @@ interface GameBoardProps {
   disabled: boolean
   onCellPress: (cell: CellKey) => void
   onPathComplete: (path: CellKey[], invalidMessage: string | null) => void
-  onSelectedMoveChange?: (moveNumber: number | null) => void
-  selectedMoveRequest?: {
-    gameId: string
-    moveNumber: number | null
-    requestId: number
-  }
-  selectedMoveTimerPaused?: boolean
+  selectedMoveNumber?: number | null
 }
 
 interface GestureState {
@@ -33,16 +27,9 @@ interface GestureState {
   invalidMessage: string | null
 }
 
-interface HighlightedMoveState {
-  gameId: string
-  moveNumber: number
-}
-
 type PathDirection = 'up' | 'right' | 'down' | 'left'
 
-const MOVE_HIGHLIGHT_DURATION_MS = 3_000
 const COMPATIBILITY_CLICK_TIMEOUT_MS = 1_000
-const ignoreSelectedMoveChange = () => undefined
 
 const CELL_KEYS = Array.from({ length: 25 }, (_, index) =>
   coordinateToCellKey({
@@ -94,23 +81,8 @@ export function GameBoard({
   disabled,
   onCellPress,
   onPathComplete,
-  onSelectedMoveChange = ignoreSelectedMoveChange,
-  selectedMoveRequest,
-  selectedMoveTimerPaused = false,
+  selectedMoveNumber = null,
 }: GameBoardProps) {
-  const lastMove = game.moves?.[String(game.moveCount)]
-  const lastMoveNumber = lastMove?.number ?? null
-  const [highlightedMoveState, setHighlightedMoveState] =
-    useState<HighlightedMoveState | null>(
-      lastMove
-        ? { gameId: game.id, moveNumber: lastMove.number }
-        : null,
-    )
-  const highlightTimeoutRef = useRef<
-    ReturnType<typeof globalThis.setTimeout> | undefined
-  >(undefined)
-  const selectedMoveTimerPausedRef = useRef(selectedMoveTimerPaused)
-  selectedMoveTimerPausedRef.current = selectedMoveTimerPaused
   const gestureRef = useRef<GestureState | null>(null)
   const suppressNextClickRef = useRef(false)
   const suppressClickTimeoutRef = useRef<
@@ -134,83 +106,11 @@ export function GameBoard({
     }, COMPATIBILITY_CLICK_TIMEOUT_MS)
   }, [clearSuppressedClick])
 
-  const clearHighlightTimer = useCallback(() => {
-    if (highlightTimeoutRef.current !== undefined) {
-      globalThis.clearTimeout(highlightTimeoutRef.current)
-      highlightTimeoutRef.current = undefined
-    }
-  }, [])
-
-  const clearHighlightedMove = useCallback(() => {
-    clearHighlightTimer()
-    setHighlightedMoveState(null)
-    onSelectedMoveChange(null)
-  }, [clearHighlightTimer, onSelectedMoveChange])
-
-  const highlightMove = useCallback(
-    (moveNumber: number) => {
-      clearHighlightTimer()
-
-      const nextHighlight = { gameId: game.id, moveNumber }
-      setHighlightedMoveState(nextHighlight)
-      onSelectedMoveChange(moveNumber)
-      if (!selectedMoveTimerPausedRef.current) {
-        highlightTimeoutRef.current = globalThis.setTimeout(() => {
-          setHighlightedMoveState((currentHighlight) =>
-            currentHighlight?.gameId === nextHighlight.gameId &&
-            currentHighlight.moveNumber === nextHighlight.moveNumber
-              ? null
-              : currentHighlight,
-          )
-          onSelectedMoveChange(null)
-          highlightTimeoutRef.current = undefined
-        }, MOVE_HIGHLIGHT_DURATION_MS)
-      }
-    },
-    [clearHighlightTimer, game.id, onSelectedMoveChange],
-  )
-
-  useEffect(() => {
-    if (
-      lastMoveNumber !== null &&
-      game.rollbackTargetMoveNumber === lastMoveNumber
-    ) {
-      highlightMove(lastMoveNumber)
-    } else {
-      clearHighlightedMove()
-    }
-
-    return clearHighlightTimer
-  }, [
-    clearHighlightTimer,
-    clearHighlightedMove,
-    game.rollbackTargetMoveNumber,
-    highlightMove,
-    lastMoveNumber,
-  ])
-
-  useEffect(() => {
-    if (selectedMoveRequest?.gameId === game.id) {
-      if (selectedMoveRequest.moveNumber === null) {
-        clearHighlightedMove()
-      } else {
-        highlightMove(selectedMoveRequest.moveNumber)
-      }
-    }
-  }, [clearHighlightedMove, game.id, highlightMove, selectedMoveRequest])
-
-  useEffect(() => {
-    if (selectedMoveTimerPaused) {
-      clearHighlightTimer()
-    }
-  }, [clearHighlightTimer, selectedMoveTimerPaused])
-
   useEffect(() => clearSuppressedClick, [clearSuppressedClick])
 
-  const highlightedMove =
-    highlightedMoveState?.gameId === game.id
-      ? game.moves?.[String(highlightedMoveState.moveNumber)]
-      : undefined
+  const highlightedMove = selectedMoveNumber
+    ? game.moves?.[String(selectedMoveNumber)]
+    : undefined
 
   const updatePath = (
     nextCell: CellKey | null,

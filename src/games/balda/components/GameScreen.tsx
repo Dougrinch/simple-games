@@ -13,6 +13,8 @@ import type { PlayerProfile } from '../repository'
 import { GameBoard } from './GameBoard'
 import { RussianKeyboard } from './RussianKeyboard'
 
+const MOVE_HIGHLIGHT_DURATION_MS = 3_000
+
 export interface LocalDraft {
   gameId: string
   cell: CellKey
@@ -82,14 +84,14 @@ export function GameScreen({
   const [resignationOpen, setResignationOpen] = useState(false)
   const [resignationArmed, setResignationArmed] = useState(false)
   const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(
-    game.moveCount || null,
+    game.moveCount && game.rollbackTargetMoveNumber === game.moveCount
+      ? game.moveCount
+      : null,
   )
   const selectedMoveNumberRef = useRef(selectedMoveNumber)
-  const [selectedMoveRequest, setSelectedMoveRequest] = useState<{
-    gameId: string
-    moveNumber: number | null
-    requestId: number
-  } | null>(null)
+  const selectionTimerRef = useRef<
+    ReturnType<typeof globalThis.setTimeout> | undefined
+  >(undefined)
   const [ratingOpen, setRatingOpen] = useState(false)
   const ratingWasOpenRef = useRef(false)
   const moves = Object.values(game.moves ?? {}).sort(
@@ -124,21 +126,30 @@ export function GameScreen({
     setRatingOpen(false)
     onRateMove(selectedMove.number, rating)
   }
-  const selectMove = useCallback((moveNumber: number | null) => {
-    selectedMoveNumberRef.current = moveNumber
-    setSelectedMoveNumber(moveNumber)
-    setSelectedMoveRequest((request) => ({
-      gameId: game.id,
-      moveNumber,
-      requestId: (request?.requestId ?? 0) + 1,
-    }))
-  }, [game.id])
-  const handleSelectedMoveChange = useCallback((moveNumber: number | null) => {
-    selectedMoveNumberRef.current = moveNumber
-    setSelectedMoveNumber(moveNumber)
+  const clearSelectionTimer = useCallback(() => {
+    if (selectionTimerRef.current !== undefined) {
+      globalThis.clearTimeout(selectionTimerRef.current)
+      selectionTimerRef.current = undefined
+    }
   }, [])
+  const clearSelectedMove = useCallback(() => {
+    clearSelectionTimer()
+    selectedMoveNumberRef.current = null
+    setSelectedMoveNumber(null)
+  }, [clearSelectionTimer])
+  const selectMove = useCallback((moveNumber: number) => {
+    clearSelectionTimer()
+    selectedMoveNumberRef.current = moveNumber
+    setSelectedMoveNumber(moveNumber)
+    selectionTimerRef.current = globalThis.setTimeout(() => {
+      selectedMoveNumberRef.current = null
+      setSelectedMoveNumber(null)
+      selectionTimerRef.current = undefined
+    }, MOVE_HIGHLIGHT_DURATION_MS)
+  }, [clearSelectionTimer])
   const activateMove = (move: BaldaMove) => {
     if (selectedMoveNumberRef.current === move.number && canRateMove(move)) {
+      clearSelectionTimer()
       setRatingOpen(true)
       return
     }
@@ -150,10 +161,24 @@ export function GameScreen({
     setResignationOpen(false)
     setResignationArmed(false)
     setRatingOpen(false)
-    selectedMoveNumberRef.current = game.moveCount || null
-    setSelectedMoveNumber(game.moveCount || null)
-    setSelectedMoveRequest(null)
-  }, [game.id, game.status])
+    if (
+      game.moveCount &&
+      game.rollbackTargetMoveNumber === game.moveCount
+    ) {
+      selectMove(game.moveCount)
+    } else {
+      clearSelectedMove()
+    }
+  }, [
+    clearSelectedMove,
+    game.id,
+    game.moveCount,
+    game.rollbackTargetMoveNumber,
+    game.status,
+    selectMove,
+  ])
+
+  useEffect(() => clearSelectionTimer, [clearSelectionTimer])
 
   useEffect(() => {
     if (!resignationArmed) {
@@ -179,10 +204,10 @@ export function GameScreen({
 
   useEffect(() => {
     if (ratingWasOpenRef.current && !ratingOpen) {
-      selectMove(null)
+      clearSelectedMove()
     }
     ratingWasOpenRef.current = ratingOpen
-  }, [ratingOpen, selectMove])
+  }, [clearSelectedMove, ratingOpen])
 
   return (
     <main className="game-page">
@@ -331,9 +356,7 @@ export function GameScreen({
 
             onSubmitMove(move)
           }}
-          onSelectedMoveChange={handleSelectedMoveChange}
-          selectedMoveRequest={selectedMoveRequest ?? undefined}
-          selectedMoveTimerPaused={ratingOpen}
+          selectedMoveNumber={selectedMoveNumber}
         />
       </div>
 

@@ -405,6 +405,33 @@ describe('GameScreen', () => {
     ).toHaveClass('is-last-path', 'is-last-letter')
   })
 
+  it('restarts the selection timer when another word is selected', () => {
+    vi.useFakeTimers()
+
+    try {
+      render(
+        <GameScreen
+          {...gameScreenProps({
+            game: thriceMovedGame(),
+            playerId: 'hinhillaa',
+          })}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
+      act(() => vi.advanceTimersByTime(1_000))
+      fireEvent.click(screen.getByRole('button', { name: 'ТРЕ' }))
+      act(() => vi.advanceTimersByTime(2_000))
+      fireEvent.click(screen.getByRole('button', { name: 'ТРЕ' }))
+
+      expect(
+        screen.getByRole('dialog', { name: 'Оценить слово ТРЕ' }),
+      ).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('does not allow a player to rate their own word', () => {
     const onRateMove = vi.fn()
     render(
@@ -523,7 +550,7 @@ describe('GameScreen', () => {
     }
   })
 
-  it('ignores a selected word request from the previous game', () => {
+  it('resets the selected word when the game changes', () => {
     vi.useFakeTimers()
 
     try {
@@ -934,58 +961,39 @@ describe('GameScreen', () => {
 })
 
 describe('GameBoard pointer path', () => {
-  it('removes the last word and letter highlight three seconds after each move', () => {
-    vi.useFakeTimers()
+  it('renders the selected move supplied by the screen', () => {
+    const { rerender } = render(
+      <GameBoard
+        game={movedGame()}
+        selectedMoveNumber={1}
+        draft={null}
+        disabled
+        onCellPress={vi.fn()}
+        onPathComplete={vi.fn()}
+      />,
+    )
 
-    try {
-      const { rerender } = render(
-        <GameBoard
-          game={movedGame()}
-          draft={null}
-          disabled
-          onCellPress={vi.fn()}
-          onPathComplete={vi.fn()}
-        />,
-      )
+    const firstMoveLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А',
+    })
+    expect(firstMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
+    expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
 
-      const firstMoveLetter = screen.getByRole('gridcell', {
-        name: 'Клетка 1, 0, буква А',
-      })
-      expect(firstMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-      expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
+    rerender(
+      <GameBoard
+        game={twiceMovedGame()}
+        selectedMoveNumber={2}
+        draft={null}
+        disabled
+        onCellPress={vi.fn()}
+        onPathComplete={vi.fn()}
+      />,
+    )
 
-      act(() => {
-        vi.advanceTimersByTime(2_000)
-      })
-
-      rerender(
-        <GameBoard
-          game={twiceMovedGame()}
-          draft={null}
-          disabled
-          onCellPress={vi.fn()}
-          onPathComplete={vi.fn()}
-        />,
-      )
-
-      const secondMoveLetter = screen.getByRole('gridcell', {
-        name: 'Клетка 1, 1, буква Р',
-      })
-      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-
-      act(() => {
-        vi.advanceTimersByTime(2_999)
-      })
-      expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
-
-      act(() => {
-        vi.advanceTimersByTime(1)
-      })
-      expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
-      expect(document.querySelector('.is-last-letter')).not.toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
+    const secondMoveLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 1, буква Р',
+    })
+    expect(secondMoveLetter).toHaveClass('is-last-path', 'is-last-letter')
   })
 
   it('does not select a word when a board letter is tapped', () => {
@@ -996,6 +1004,7 @@ describe('GameBoard pointer path', () => {
       render(
         <GameBoard
           game={twiceMovedGame()}
+          selectedMoveNumber={2}
           draft={null}
           disabled
           onCellPress={onCellPress}
