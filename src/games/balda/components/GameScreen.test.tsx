@@ -332,7 +332,7 @@ describe('GameScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('highlights on pointer down and rates a word on its second press', async () => {
+  it('activates after a completed press and rates a word on its second click', async () => {
     const user = userEvent.setup()
     const onRateMove = vi.fn()
     render(
@@ -346,15 +346,18 @@ describe('GameScreen', () => {
     )
 
     const word = screen.getByRole('button', { name: 'АБЕ' })
+    const firstLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А',
+    })
     fireEvent.pointerDown(word, { pointerId: 1, pointerType: 'touch' })
-    expect(
-      screen.getByRole('gridcell', {
-        name: 'Клетка 1, 0, буква А',
-      }),
-    ).toHaveClass('is-last-path', 'is-last-letter')
+    expect(firstLetter).not.toHaveClass('is-last-path')
+    fireEvent.pointerUp(word, { pointerId: 1, pointerType: 'touch' })
+    expect(firstLetter).not.toHaveClass('is-last-path')
+    fireEvent.click(word)
+    expect(firstLetter).toHaveClass('is-last-path', 'is-last-letter')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    fireEvent.pointerDown(word, { pointerId: 2, pointerType: 'touch' })
+    fireEvent.click(word)
     expect(
       screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
     ).toBeInTheDocument()
