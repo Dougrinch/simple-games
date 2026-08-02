@@ -4,7 +4,6 @@ on:
   pull_request_target:
     types:
       - opened
-      - closed
 
 jobs:
   auto-merge:
@@ -19,22 +18,3 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
-
-  delete-branch:
-    if: >-
-      github.event.action == 'closed' &&
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete merged branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          encoded_head_ref="$(jq -rn --arg ref "$HEAD_REF" '$ref | @uri')"
-          gh api --method DELETE \
-            "repos/$REPOSITORY/git/refs/heads/$encoded_head_ref"
