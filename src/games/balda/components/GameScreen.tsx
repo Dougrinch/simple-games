@@ -84,6 +84,7 @@ export function GameScreen({
   const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(
     game.moveCount || null,
   )
+  const selectedMoveNumberRef = useRef(selectedMoveNumber)
   const [selectedMoveRequest, setSelectedMoveRequest] = useState<{
     gameId: string
     moveNumber: number | null
@@ -124,6 +125,7 @@ export function GameScreen({
     onRateMove(selectedMove.number, rating)
   }
   const selectMove = useCallback((moveNumber: number | null) => {
+    selectedMoveNumberRef.current = moveNumber
     setSelectedMoveNumber(moveNumber)
     setSelectedMoveRequest((request) => ({
       gameId: game.id,
@@ -131,8 +133,12 @@ export function GameScreen({
       requestId: (request?.requestId ?? 0) + 1,
     }))
   }, [game.id])
+  const handleSelectedMoveChange = useCallback((moveNumber: number | null) => {
+    selectedMoveNumberRef.current = moveNumber
+    setSelectedMoveNumber(moveNumber)
+  }, [])
   const activateMove = (move: BaldaMove) => {
-    if (selectedMoveNumber === move.number && canRateMove(move)) {
+    if (selectedMoveNumberRef.current === move.number && canRateMove(move)) {
       setRatingOpen(true)
       return
     }
@@ -144,6 +150,7 @@ export function GameScreen({
     setResignationOpen(false)
     setResignationArmed(false)
     setRatingOpen(false)
+    selectedMoveNumberRef.current = game.moveCount || null
     setSelectedMoveNumber(game.moveCount || null)
     setSelectedMoveRequest(null)
   }, [game.id, game.status])
@@ -324,7 +331,7 @@ export function GameScreen({
 
             onSubmitMove(move)
           }}
-          onSelectedMoveChange={setSelectedMoveNumber}
+          onSelectedMoveChange={handleSelectedMoveChange}
           selectedMoveRequest={selectedMoveRequest ?? undefined}
           selectedMoveTimerPaused={ratingOpen}
         />

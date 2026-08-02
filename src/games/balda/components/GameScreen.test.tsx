@@ -381,6 +381,30 @@ describe('GameScreen', () => {
     expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
   })
 
+  it('switches between enemy words without rating the previous selection', () => {
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: thriceMovedGame(),
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+
+    const firstWord = screen.getByRole('button', { name: 'АБЕ' })
+    const secondWord = screen.getByRole('button', { name: 'ТРЕ' })
+
+    act(() => {
+      firstWord.click()
+      secondWord.click()
+    })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('gridcell', { name: 'Клетка 1, 2, буква Т' }),
+    ).toHaveClass('is-last-path', 'is-last-letter')
+  })
+
   it('does not allow a player to rate their own word', () => {
     const onRateMove = vi.fn()
     render(
