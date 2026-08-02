@@ -359,12 +359,7 @@ export function GameScreen({
                       <button
                         className="move-history-word"
                         type="button"
-                        onPointerDown={() => activateMove(move)}
-                        onClick={(event) => {
-                          if (event.detail === 0) {
-                            activateMove(move)
-                          }
-                        }}
+                        onClick={() => activateMove(move)}
                       >
                         {move.word}
                         {emoji && ` ${emoji}`}
@@ -390,12 +385,7 @@ export function GameScreen({
                       <button
                         className="move-history-word"
                         type="button"
-                        onPointerDown={() => activateMove(move)}
-                        onClick={(event) => {
-                          if (event.detail === 0) {
-                            activateMove(move)
-                          }
-                        }}
+                        onClick={() => activateMove(move)}
                       >
                         {move.word}
                         {emoji && ` ${emoji}`}
