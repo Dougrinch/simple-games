@@ -405,6 +405,37 @@ describe('GameScreen', () => {
     ).toHaveClass('is-last-path', 'is-last-letter')
   })
 
+  it('ignores an expired timer from the previously selected word', () => {
+    vi.useFakeTimers()
+    const clearTimeoutSpy = vi
+      .spyOn(globalThis, 'clearTimeout')
+      .mockImplementation(() => undefined)
+
+    try {
+      render(
+        <GameScreen
+          {...gameScreenProps({
+            game: thriceMovedGame(),
+            playerId: 'hinhillaa',
+          })}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'АБЕ' }))
+      act(() => vi.advanceTimersByTime(1_000))
+      fireEvent.click(screen.getByRole('button', { name: 'ТРЕ' }))
+      act(() => vi.advanceTimersByTime(2_000))
+      fireEvent.click(screen.getByRole('button', { name: 'ТРЕ' }))
+
+      expect(
+        screen.getByRole('dialog', { name: 'Оценить слово ТРЕ' }),
+      ).toBeInTheDocument()
+    } finally {
+      clearTimeoutSpy.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('does not allow a player to rate their own word', () => {
     const onRateMove = vi.fn()
     render(

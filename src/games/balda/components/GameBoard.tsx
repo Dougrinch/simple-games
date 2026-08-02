@@ -106,6 +106,8 @@ export function GameBoard({
         ? { gameId: game.id, moveNumber: lastMove.number }
         : null,
     )
+  const highlightedMoveStateRef = useRef(highlightedMoveState)
+  const highlightVersionRef = useRef(0)
   const highlightTimeoutRef = useRef<
     ReturnType<typeof globalThis.setTimeout> | undefined
   >(undefined)
@@ -143,6 +145,8 @@ export function GameBoard({
 
   const clearHighlightedMove = useCallback(() => {
     clearHighlightTimer()
+    highlightVersionRef.current += 1
+    highlightedMoveStateRef.current = null
     setHighlightedMoveState(null)
     onSelectedMoveChange(null)
   }, [clearHighlightTimer, onSelectedMoveChange])
@@ -152,16 +156,24 @@ export function GameBoard({
       clearHighlightTimer()
 
       const nextHighlight = { gameId: game.id, moveNumber }
+      const highlightVersion = highlightVersionRef.current + 1
+      highlightVersionRef.current = highlightVersion
+      highlightedMoveStateRef.current = nextHighlight
       setHighlightedMoveState(nextHighlight)
       onSelectedMoveChange(moveNumber)
       if (!selectedMoveTimerPausedRef.current) {
         highlightTimeoutRef.current = globalThis.setTimeout(() => {
-          setHighlightedMoveState((currentHighlight) =>
-            currentHighlight?.gameId === nextHighlight.gameId &&
-            currentHighlight.moveNumber === nextHighlight.moveNumber
-              ? null
-              : currentHighlight,
-          )
+          const currentHighlight = highlightedMoveStateRef.current
+          if (
+            highlightVersionRef.current !== highlightVersion ||
+            currentHighlight?.gameId !== nextHighlight.gameId ||
+            currentHighlight.moveNumber !== nextHighlight.moveNumber
+          ) {
+            return
+          }
+
+          highlightedMoveStateRef.current = null
+          setHighlightedMoveState(null)
           onSelectedMoveChange(null)
           highlightTimeoutRef.current = undefined
         }, MOVE_HIGHLIGHT_DURATION_MS)
