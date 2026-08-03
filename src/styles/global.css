@@ -799,6 +799,7 @@ button:disabled {
   font: inherit;
   letter-spacing: inherit;
   text-align: left;
+  touch-action: manipulation;
 }
 
 .move-history-word:active {
