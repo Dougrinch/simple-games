@@ -510,6 +510,38 @@ describe('GameScreen', () => {
     expect(screen.queryByText(/Хуйня/u)).not.toBeInTheDocument()
   })
 
+  it('cancels an existing rating from the same word popup', async () => {
+    const user = userEvent.setup()
+    const onCancelRating = vi.fn()
+    const ratedGame = movedGame()
+    const move = ratedGame.moves?.['1']
+    if (!move) throw new Error('Expected the first move.')
+    move.rating = 'great'
+
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: ratedGame,
+          playerId: 'hinhillaa',
+          onCancelRating,
+        })}
+      />,
+    )
+
+    const word = screen.getByRole('button', { name: 'АБЕ ❤️' })
+    await user.click(word)
+    await user.click(word)
+
+    expect(
+      screen.getByRole('dialog', { name: 'Отменить оценку слова АБЕ' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Это была ошибка!' }))
+
+    expect(onCancelRating).toHaveBeenCalledWith(1)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+  })
+
   it('keeps selected words on the board and out of the status row', () => {
     vi.useFakeTimers()
 

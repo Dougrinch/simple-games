@@ -414,6 +414,28 @@ function AuthorizedGame({
     }
   }
 
+  const cancelRating = async (moveNumber: number) => {
+    const repository = repositoryRef.current
+    const game = session?.game
+    if (!repository || !game || pendingOperation) return
+    setPendingOperation('move')
+    try {
+      const confirmedGame = await repository.cancelRating(
+        game.id,
+        playerId,
+        moveNumber,
+      )
+      setSession((current) =>
+        current ? { ...current, game: confirmedGame } : current,
+      )
+    } catch (error) {
+      markOffline(error)
+      await resynchronize(repository)
+    } finally {
+      setPendingOperation(null)
+    }
+  }
+
   const resign = async () => {
     const repository = repositoryRef.current
     const game = session?.game
@@ -565,6 +587,7 @@ function AuthorizedGame({
       }}
       onSubmitMove={(move) => void submitMove(move)}
       onRateMove={(moveNumber, rating) => void rateMove(moveNumber, rating)}
+      onCancelRating={(moveNumber) => void cancelRating(moveNumber)}
       onRollback={() => void rollback()}
       onResign={() => void resign()}
       onCreateGame={() => void createGame()}

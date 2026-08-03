@@ -38,6 +38,7 @@ interface GameScreenProps {
   onClearDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
   onRateMove?: (moveNumber: number, rating: WordRating) => void
+  onCancelRating?: (moveNumber: number) => void
   onRollback: () => void
   onResign: () => void
   onCreateGame: () => void
@@ -73,6 +74,7 @@ export function GameScreen({
   onClearDraft,
   onSubmitMove,
   onRateMove = () => undefined,
+  onCancelRating = () => undefined,
   onRollback,
   onResign,
   onCreateGame,
@@ -110,11 +112,10 @@ export function GameScreen({
   const selectedMove = selectedMoveNumber
     ? game.moves?.[String(selectedMoveNumber)]
     : undefined
-  const canRateMove = (move: BaldaMove | undefined) =>
+  const canChangeRating = (move: BaldaMove | undefined) =>
     Boolean(
       move &&
         move.authorPlayerId !== playerId &&
-        !move.rating &&
         online &&
         synchronized &&
         !pending,
@@ -125,6 +126,13 @@ export function GameScreen({
     }
     setRatingOpen(false)
     onRateMove(selectedMove.number, rating)
+  }
+  const cancelSelectedRating = () => {
+    if (!selectedMove?.rating || selectedMove.authorPlayerId === playerId) {
+      return
+    }
+    setRatingOpen(false)
+    onCancelRating(selectedMove.number)
   }
   const clearSelectionTimer = useCallback(() => {
     if (selectionTimerRef.current !== undefined) {
@@ -148,7 +156,7 @@ export function GameScreen({
     }, MOVE_HIGHLIGHT_DURATION_MS)
   }, [clearSelectionTimer])
   const activateMove = (move: BaldaMove) => {
-    if (selectedMoveNumberRef.current === move.number && canRateMove(move)) {
+    if (selectedMoveNumberRef.current === move.number && canChangeRating(move)) {
       clearSelectionTimer()
       setRatingOpen(true)
       return
@@ -196,7 +204,7 @@ export function GameScreen({
     if (
       !selectedMove ||
       selectedMove.authorPlayerId === playerId ||
-      selectedMove.rating
+      !canChangeRating(selectedMove)
     ) {
       setRatingOpen(false)
     }
@@ -463,24 +471,32 @@ export function GameScreen({
       {ratingOpen &&
         selectedMove &&
         selectedMove.authorPlayerId !== playerId &&
-        !selectedMove.rating && (
+        canChangeRating(selectedMove) && (
         <div className="rating-backdrop" onClick={() => setRatingOpen(false)}>
           <section
             className="rating-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label={`Оценить слово ${selectedMove.word}`}
+            aria-label={`${selectedMove.rating ? 'Отменить оценку слова' : 'Оценить слово'} ${selectedMove.word}`}
             onClick={(event) => event.stopPropagation()}
           >
-            <button type="button" onClick={() => rateSelectedMove('bad')}>
-              Хуйня 🙄
-            </button>
-            <button type="button" onClick={() => rateSelectedMove('great')}>
-              Охуенно ❤️
-            </button>
-            <button type="button" onClick={() => rateSelectedMove('angry')}>
-              Иди нахрен 🤬
-            </button>
+            {selectedMove.rating ? (
+              <button type="button" onClick={cancelSelectedRating}>
+                Это была ошибка!
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={() => rateSelectedMove('bad')}>
+                  Хуйня 🙄
+                </button>
+                <button type="button" onClick={() => rateSelectedMove('great')}>
+                  Охуенно ❤️
+                </button>
+                <button type="button" onClick={() => rateSelectedMove('angry')}>
+                  Иди нахрен 🤬
+                </button>
+              </>
+            )}
           </section>
         </div>
       )}

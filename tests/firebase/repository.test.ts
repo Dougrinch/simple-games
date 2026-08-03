@@ -207,6 +207,51 @@ describe('BaldaRepository transactions', () => {
     }
   })
 
+  it('lets only the opponent cancel an existing word rating', async () => {
+    const first = await connectedRepository('grinch131')
+    const second = await connectedRepository('hinhillaa')
+
+    try {
+      const created = await first.repository.createGame()
+      const authorId = created.turnPlayerId as PlayerId
+      const opponentId = created.playerIds.find((id) => id !== authorId) as PlayerId
+      const author = authorId === 'grinch131' ? first : second
+      const opponent = opponentId === 'grinch131' ? first : second
+      await author.repository.resync()
+      const moved = await author.repository.submitMove(created.id, authorId, {
+        expectedRevision: 0,
+        cell: '1_0',
+        letter: 'А',
+        path: ['1_0', '2_0', '2_1'],
+      })
+      await opponent.repository.resync()
+      const rated = await opponent.repository.rateMove(
+        moved.id,
+        opponentId,
+        1,
+        'great',
+      )
+
+      expect(rated.moves?.['1']?.rating).toBe('great')
+      await author.repository.resync()
+      await expect(
+        author.repository.cancelRating(rated.id, authorId, 1),
+      ).rejects.toMatchObject({ kind: 'conflict' })
+
+      const unrated = await opponent.repository.cancelRating(
+        rated.id,
+        opponentId,
+        1,
+      )
+
+      expect(unrated.moves?.['1']?.rating).toBeUndefined()
+      expect((await readCurrentGame(first.database)).moves?.['1']?.rating).toBeUndefined()
+    } finally {
+      first.unsubscribe()
+      second.unsubscribe()
+    }
+  })
+
   it('rejects a stale revision and rolls back the complete last move', async () => {
     const connection = await connectedRepository('grinch131')
 

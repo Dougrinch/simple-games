@@ -30,6 +30,8 @@ const repositoryMocks = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   createGame: vi.fn(),
   submitMove: vi.fn(),
+  rateMove: vi.fn(),
+  cancelRating: vi.fn(),
   rollbackLastMove: vi.fn(),
   resignGame: vi.fn(),
   resync: vi.fn(),
@@ -75,6 +77,8 @@ vi.mock('../games/balda/repository', async (importOriginal) => {
 
     createGame = repositoryMocks.createGame
     submitMove = repositoryMocks.submitMove
+    rateMove = repositoryMocks.rateMove
+    cancelRating = repositoryMocks.cancelRating
     rollbackLastMove = repositoryMocks.rollbackLastMove
     resignGame = repositoryMocks.resignGame
     resync = repositoryMocks.resync
@@ -126,6 +130,8 @@ describe('App states and orchestration', () => {
     repositoryMocks.unsubscribe.mockReset()
     repositoryMocks.createGame.mockReset()
     repositoryMocks.submitMove.mockReset()
+    repositoryMocks.rateMove.mockReset()
+    repositoryMocks.cancelRating.mockReset()
     repositoryMocks.rollbackLastMove.mockReset()
     repositoryMocks.resignGame.mockReset()
     repositoryMocks.resync.mockReset()

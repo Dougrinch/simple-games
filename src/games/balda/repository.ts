@@ -742,6 +742,45 @@ export class BaldaRepository {
     }
   }
 
+  async cancelRating(
+    gameId: string,
+    playerId: PlayerId,
+    moveNumber: number,
+  ): Promise<BaldaGame> {
+    this.requireReady()
+    try {
+      const gameReference = ref(this.database, `${ROOT_PATH}/games/${gameId}`)
+      const transaction = await runTransaction(
+        gameReference,
+        (value: unknown) => {
+          if (value === null) return
+          const game = parseBaldaGame(value)
+          const move = game.moves?.[String(moveNumber)]
+          if (!move?.rating || move.authorPlayerId === playerId) return
+          const updatedMove = { ...move }
+          delete updatedMove.rating
+          return serializeGameWithServerTimestamps({
+            ...game,
+            moves: {
+              ...game.moves,
+              [String(moveNumber)]: updatedMove,
+            },
+          })
+        },
+        { applyLocally: false },
+      )
+      if (!transaction.committed) {
+        throw new RepositoryError(
+          'Можно отменять только оценку чужого слова.',
+          'conflict',
+        )
+      }
+      return this.storeConfirmedGame(parseBaldaGame(transaction.snapshot.val()))
+    } catch (error) {
+      throw mapRepositoryError(error, 'Canceling a move rating')
+    }
+  }
+
   async rollbackLastMove(
     gameId: string,
     playerId: PlayerId,
