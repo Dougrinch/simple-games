@@ -497,17 +497,39 @@ describe('GameScreen', () => {
     }
   })
 
-  it('shows only the saved rating emoji next to the word', () => {
+  it('opens a popup for a saved rating and removes it on confirmation', async () => {
+    const user = userEvent.setup()
+    const onRateMove = vi.fn()
     const ratedGame = movedGame()
     const move = ratedGame.moves?.['1']
     if (!move) throw new Error('Expected the first move.')
     move.rating = 'bad'
 
-    render(<GameScreen {...gameScreenProps({ game: ratedGame })} />)
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: ratedGame,
+          playerId: 'hinhillaa',
+          onRateMove,
+        })}
+      />,
+    )
 
-    expect(screen.queryByRole('button', { name: 'Оценить' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'История ходов' })).toHaveTextContent('АБЕ 🙄')
+    expect(screen.getByRole('region', { name: 'История ходов' })).toHaveTextContent(
+      'АБЕ 🙄',
+    )
     expect(screen.queryByText(/Хуйня/u)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'АБЕ 🙄' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'Отменить оценку слова АБЕ' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Это была ошибка!' }))
+
+    expect(onRateMove).toHaveBeenCalledWith(1, null)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
   })
 
   it('keeps selected words on the board and out of the status row', () => {

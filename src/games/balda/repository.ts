@@ -708,7 +708,7 @@ export class BaldaRepository {
     gameId: string,
     playerId: PlayerId,
     moveNumber: number,
-    rating: WordRating,
+    rating: WordRating | null,
   ): Promise<BaldaGame> {
     this.requireReady()
     try {
@@ -719,12 +719,20 @@ export class BaldaRepository {
           if (value === null) return
           const game = parseBaldaGame(value)
           const move = game.moves?.[String(moveNumber)]
-          if (!move || move.authorPlayerId === playerId || move.rating) return
+          if (
+            !move ||
+            move.authorPlayerId === playerId ||
+            (rating === null ? !move.rating : Boolean(move.rating))
+          ) return
+          const moveWithoutRating = { ...move }
+          delete moveWithoutRating.rating
           return serializeGameWithServerTimestamps({
             ...game,
             moves: {
               ...game.moves,
-              [String(moveNumber)]: { ...move, rating },
+              [String(moveNumber)]: rating === null
+                ? moveWithoutRating
+                : { ...moveWithoutRating, rating },
             },
           })
         },
@@ -732,7 +740,9 @@ export class BaldaRepository {
       )
       if (!transaction.committed) {
         throw new RepositoryError(
-          'Можно оценивать только чужие неоценённые слова.',
+          rating === null
+            ? 'Можно отменить только свою оценку чужого слова.'
+            : 'Можно оценивать только чужие неоценённые слова.',
           'conflict',
         )
       }

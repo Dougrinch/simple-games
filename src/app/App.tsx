@@ -391,7 +391,10 @@ function AuthorizedGame({
     }
   }
 
-  const rateMove = async (moveNumber: number, rating: WordRating) => {
+  const rateMove = async (
+    moveNumber: number,
+    rating: WordRating | null,
+  ) => {
     const repository = repositoryRef.current
     const game = session?.game
     if (!repository || !game || pendingOperation) return
