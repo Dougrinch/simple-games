@@ -37,7 +37,7 @@ interface GameScreenProps {
   onCloseKeyboard: () => void
   onClearDraft: () => void
   onSubmitMove: (draft: MoveDraft) => void
-  onRateMove?: (moveNumber: number, rating: WordRating) => void
+  onRateMove?: (moveNumber: number, rating: WordRating | null) => void
   onRollback: () => void
   onResign: () => void
   onCreateGame: () => void
@@ -114,12 +114,11 @@ export function GameScreen({
     Boolean(
       move &&
         move.authorPlayerId !== playerId &&
-        !move.rating &&
         online &&
         synchronized &&
         !pending,
     )
-  const rateSelectedMove = (rating: WordRating) => {
+  const rateSelectedMove = (rating: WordRating | null) => {
     if (!selectedMove || selectedMove.authorPlayerId === playerId) {
       return
     }
@@ -195,8 +194,7 @@ export function GameScreen({
   useEffect(() => {
     if (
       !selectedMove ||
-      selectedMove.authorPlayerId === playerId ||
-      selectedMove.rating
+      selectedMove.authorPlayerId === playerId
     ) {
       setRatingOpen(false)
     }
@@ -462,25 +460,36 @@ export function GameScreen({
 
       {ratingOpen &&
         selectedMove &&
-        selectedMove.authorPlayerId !== playerId &&
-        !selectedMove.rating && (
+        selectedMove.authorPlayerId !== playerId && (
         <div className="rating-backdrop" onClick={() => setRatingOpen(false)}>
           <section
             className="rating-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label={`Оценить слово ${selectedMove.word}`}
+            aria-label={
+              selectedMove.rating
+                ? `Отменить оценку слова ${selectedMove.word}`
+                : `Оценить слово ${selectedMove.word}`
+            }
             onClick={(event) => event.stopPropagation()}
           >
-            <button type="button" onClick={() => rateSelectedMove('bad')}>
-              Хуйня 🙄
-            </button>
-            <button type="button" onClick={() => rateSelectedMove('great')}>
-              Охуенно ❤️
-            </button>
-            <button type="button" onClick={() => rateSelectedMove('angry')}>
-              Иди нахрен 🤬
-            </button>
+            {selectedMove.rating ? (
+              <button type="button" onClick={() => rateSelectedMove(null)}>
+                Это была ошибка!
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={() => rateSelectedMove('bad')}>
+                  Хуйня 🙄
+                </button>
+                <button type="button" onClick={() => rateSelectedMove('great')}>
+                  Охуенно ❤️
+                </button>
+                <button type="button" onClick={() => rateSelectedMove('angry')}>
+                  Иди нахрен 🤬
+                </button>
+              </>
+            )}
           </section>
         </div>
       )}
