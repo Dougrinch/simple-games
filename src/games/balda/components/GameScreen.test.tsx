@@ -832,12 +832,20 @@ describe('GameScreen', () => {
     expect(onResign).toHaveBeenCalledOnce()
   })
 
-  it('reveals a nudge beside surrender and sends it immediately', async () => {
+  it('reveals a nudge beside surrender during the opponent turn', async () => {
     const user = userEvent.setup()
     const onNudge = vi.fn()
-    render(<GameScreen {...gameScreenProps({ onNudge })} />)
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: movedGame(),
+          playerId: 'grinch131',
+          onNudge,
+        })}
+      />,
+    )
 
-    await user.click(screen.getByRole('button', { name: 'Мой ход' }))
+    await user.click(screen.getByRole('button', { name: 'Ход вражины' }))
 
     const surrender = screen.getByRole('button', { name: 'Сдаться' })
     const nudge = screen.getByRole('button', { name: 'Пнуть вражину' })
@@ -849,7 +857,23 @@ describe('GameScreen', () => {
     expect(
       screen.queryByRole('button', { name: 'Пнуть вражину' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Мой ход' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ход вражины' }),
+    ).toBeInTheDocument()
+  })
+
+  it('only reveals surrender during the current player turn', async () => {
+    const user = userEvent.setup()
+    render(<GameScreen {...gameScreenProps()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Мой ход' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Сдаться' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Пнуть вражину' }),
+    ).not.toBeInTheDocument()
   })
 
   it('returns to the turn label if surrender is not pressed for three seconds', () => {
