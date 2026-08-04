@@ -190,7 +190,11 @@ export async function enablePushNotifications(
   )
 }
 
-export async function notifyOtherPlayer(): Promise<void> {
+export type PushNotificationKind = 'turn' | 'nudge'
+
+export async function notifyOtherPlayer(
+  kind: PushNotificationKind = 'turn',
+): Promise<void> {
   const user = getFirebaseServices().auth.currentUser
   if (!user) {
     throw new PushClientError(
@@ -208,7 +212,7 @@ export async function notifyOtherPlayer(): Promise<void> {
         authorization: `Bearer ${idToken}`,
         'content-type': 'application/json',
       },
-      body: '{}',
+      body: JSON.stringify({ kind }),
     },
   )
 

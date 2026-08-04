@@ -405,9 +405,15 @@ button:disabled {
   text-align: right;
 }
 
-.game-status > .turn-pill {
+.game-status > .turn-pill,
+.game-status > .turn-actions {
   grid-column: 1;
   justify-self: start;
+}
+
+.turn-actions {
+  display: flex;
+  gap: 7px;
 }
 
 .game-status > .rollback-button {
@@ -490,6 +496,12 @@ button:disabled {
   border-color: rgb(255 141 126 / 45%);
   color: #ffd7d1;
   background: rgb(255 141 126 / 16%);
+}
+
+.turn-pill.is-nudge {
+  border-color: rgb(238 190 92 / 45%);
+  color: var(--gold);
+  background: rgb(238 190 92 / 12%);
 }
 
 .final-result {

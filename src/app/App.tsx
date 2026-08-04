@@ -450,6 +450,12 @@ function AuthorizedGame({
     }
   }
 
+  const nudge = () => {
+    void notifyOtherPlayer('nudge').catch((error: unknown) => {
+      console.error('Sending a nudge notification failed.', error)
+    })
+  }
+
   if (fatalError) {
     if (fatalError.kind === 'permission') {
       return (
@@ -570,6 +576,7 @@ function AuthorizedGame({
       onRateMove={(moveNumber, rating) => void rateMove(moveNumber, rating)}
       onRollback={() => void rollback()}
       onResign={() => void resign()}
+      onNudge={nudge}
       onCreateGame={() => void createGame()}
     />
   )
