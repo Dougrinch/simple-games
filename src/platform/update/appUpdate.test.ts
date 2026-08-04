@@ -186,6 +186,44 @@ describe('application update manager', () => {
     expect(reloadPage).toHaveBeenCalledWith('new-build')
   })
 
+  it('does not show a notice after an update without release notes', async () => {
+    installServiceWorker()
+    localStorage.setItem(
+      'balda-last-seen-release-id',
+      String(CURRENT_RELEASE_ID),
+    )
+    sessionStorage.setItem(
+      'balda-pending-update-notice',
+      JSON.stringify({
+        latestReleaseId: CURRENT_RELEASE_ID,
+        notes: [],
+      }),
+    )
+    window.history.replaceState(
+      null,
+      '',
+      `/?app-update=new-build`,
+    )
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(manifestResponse()),
+    )
+    const onNotice = vi.fn()
+
+    const manager = startAppUpdateManager({
+      checkIntervalMs: 60_000,
+      onNotice,
+    })
+    await manager.ready
+    manager.stop()
+
+    expect(onNotice).not.toHaveBeenCalled()
+    expect(window.location.search).toBe('')
+    expect(
+      sessionStorage.getItem('balda-pending-update-notice'),
+    ).toBeNull()
+  })
+
   it('stores acknowledgement and clears the pending notice', () => {
     sessionStorage.setItem(
       'balda-pending-update-notice',
