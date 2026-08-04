@@ -197,7 +197,7 @@ function removeUpdateQueryParameter(): boolean {
 }
 
 function readPendingNotice(): AppUpdateNotice | null {
-  const arrivedAfterUpdate = removeUpdateQueryParameter()
+  removeUpdateQueryParameter()
   const pending = parsePendingNotice(
     readStorage(sessionStorage, PENDING_NOTICE_KEY),
   )
@@ -214,9 +214,7 @@ function readPendingNotice(): AppUpdateNotice | null {
     removeStorage(sessionStorage, PENDING_NOTICE_KEY)
   }
 
-  return arrivedAfterUpdate
-    ? { latestReleaseId: CURRENT_RELEASE_ID, notes: [] }
-    : null
+  return null
 }
 
 function savePendingNotice(notice: AppUpdateNotice): void {
@@ -331,11 +329,11 @@ export function startAppUpdateManager({
           latestReleaseId,
         )
       } catch {
-        // The dialog still confirms the update if notes are temporarily offline.
+        // A later application load can retry unavailable release notes.
       }
     }
 
-    if (!stopped) {
+    if (!stopped && notes.length > 0) {
       onNotice({ latestReleaseId, notes })
     }
   }
