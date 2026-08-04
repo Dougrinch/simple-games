@@ -561,6 +561,24 @@ describe('App states and orchestration', () => {
     expect(pushMocks.notifyOtherPlayer).not.toHaveBeenCalled()
   })
 
+  it('sends a nudge notification from the turn submenu', async () => {
+    const user = userEvent.setup()
+    authMocks.session = {
+      status: 'authorized',
+      playerId: 'grinch131',
+      user: authorizedUser,
+    }
+    repositoryMocks.session = session({
+      game: createInitialGame('game-1', 'БЕРЕГ', 'hinhillaa', 1),
+    })
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Ход вражины' }))
+    await user.click(screen.getByRole('button', { name: 'Пнуть вражину' }))
+
+    expect(pushMocks.notifyOtherPlayer).toHaveBeenCalledWith('nudge')
+  })
+
   it('resynchronizes when a resignation loses a revision race', async () => {
     const user = userEvent.setup()
     authMocks.session = {

@@ -110,6 +110,7 @@ function gameScreenProps(
     onRateMove: vi.fn(),
     onRollback: vi.fn(),
     onResign: vi.fn(),
+    onNudge: vi.fn(),
     onCreateGame: vi.fn(),
     ...overrides,
   }
@@ -138,6 +139,7 @@ describe('GameScreen', () => {
         onSubmitMove={vi.fn()}
         onRollback={vi.fn()}
         onResign={vi.fn()}
+        onNudge={vi.fn()}
         onCreateGame={vi.fn()}
       />,
     )
@@ -828,6 +830,26 @@ describe('GameScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Сдаться' }))
     await user.click(screen.getByRole('button', { name: 'Сдаюся' }))
     expect(onResign).toHaveBeenCalledOnce()
+  })
+
+  it('reveals a nudge beside surrender and sends it immediately', async () => {
+    const user = userEvent.setup()
+    const onNudge = vi.fn()
+    render(<GameScreen {...gameScreenProps({ onNudge })} />)
+
+    await user.click(screen.getByRole('button', { name: 'Мой ход' }))
+
+    const surrender = screen.getByRole('button', { name: 'Сдаться' })
+    const nudge = screen.getByRole('button', { name: 'Пнуть вражину' })
+    expect(surrender.parentElement).toBe(nudge.parentElement)
+
+    await user.click(nudge)
+
+    expect(onNudge).toHaveBeenCalledOnce()
+    expect(
+      screen.queryByRole('button', { name: 'Пнуть вражину' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Мой ход' })).toBeInTheDocument()
   })
 
   it('returns to the turn label if surrender is not pressed for three seconds', () => {

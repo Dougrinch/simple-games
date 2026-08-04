@@ -188,7 +188,7 @@ describe('push client', () => {
     )
   })
 
-  it('sends an authenticated empty turn-notification request', async () => {
+  it('sends an authenticated turn-notification request', async () => {
     const user = { uid: 'uid-grinch131' } as User
     Object.assign(firebaseMocks.services.auth, { currentUser: user })
     firebaseMocks.getIdToken.mockResolvedValue('firebase-token')
@@ -208,8 +208,26 @@ describe('push client', () => {
           authorization: 'Bearer firebase-token',
           'content-type': 'application/json',
         },
-        body: '{}',
+        body: '{"kind":"turn"}',
       },
+    )
+  })
+
+  it('requests a nudge notification explicitly', async () => {
+    Object.assign(firebaseMocks.services.auth, {
+      currentUser: { uid: 'uid-grinch131' } as User,
+    })
+    firebaseMocks.getIdToken.mockResolvedValue('firebase-token')
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({ accepted: true }, { status: 202 }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await notifyOtherPlayer('nudge')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://push.example/notifications/turn',
+      expect.objectContaining({ body: '{"kind":"nudge"}' }),
     )
   })
 

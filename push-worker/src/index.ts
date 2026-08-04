@@ -11,6 +11,7 @@ const PLAYER_BY_EMAIL = {
 } as const
 
 type PlayerId = (typeof PLAYER_BY_EMAIL)[keyof typeof PLAYER_BY_EMAIL]
+type NotificationKind = 'turn' | 'nudge'
 
 export type FetchFunction = (
   input: RequestInfo | URL,
@@ -178,6 +179,29 @@ function otherPlayer(playerId: PlayerId): PlayerId {
   return playerId === 'grinch131' ? 'hinhillaa' : 'grinch131'
 }
 
+async function notificationKind(request: Request): Promise<NotificationKind> {
+  if (!request.body) {
+    return 'turn'
+  }
+
+  let data: unknown
+  try {
+    data = await request.json()
+  } catch {
+    throw new HttpError(400, 'Notification request is invalid.')
+  }
+
+  const kind = rawRecord(data)?.kind
+  if (kind === undefined || kind === 'turn') {
+    return 'turn'
+  }
+  if (kind === 'nudge') {
+    return 'nudge'
+  }
+
+  throw new HttpError(400, 'Notification kind is invalid.')
+}
+
 function parseSubscription(value: unknown): PushSubscription | null {
   const subscription = rawRecord(value)
   const keys = rawRecord(subscription?.keys)
@@ -269,6 +293,7 @@ function pushErrorStatus(error: unknown): number | null {
 async function deliverTurnNotifications(
   recipientPlayerId: PlayerId,
   idToken: string,
+  kind: NotificationKind,
   env: Env,
   dependencies: WorkerDependencies,
 ): Promise<void> {
@@ -281,7 +306,10 @@ async function deliverTurnNotifications(
     )
     const payload = JSON.stringify({
       title: 'Важное сообщение',
-      body: 'Вражина сделала свой ход.',
+      body:
+        kind === 'nudge'
+          ? 'Слышь, вражина, ходи или сдавайся!'
+          : 'Вражина сделала свой ход.',
       data: { url: env.APP_URL },
     })
     let sent = 0
@@ -381,6 +409,7 @@ export async function handleRequest(
     }
 
     const idToken = bearerToken(request)
+    const kind = await notificationKind(request)
     const callerPlayerId = await authenticatePlayer(
       idToken,
       env,
@@ -392,6 +421,7 @@ export async function handleRequest(
       deliverTurnNotifications(
         recipientPlayerId,
         idToken,
+        kind,
         env,
         dependencies,
       ),

@@ -281,6 +281,57 @@ describe('push Worker API', () => {
     })
   })
 
+  it('uses the usual title and reminder text for a nudge', async () => {
+    const fetcher = queuedFetch([
+      json({ users: [{ email: 'grinch131@gmail.com' }] }),
+      json({
+        phone: {
+          endpoint: 'https://push.example/phone',
+          keys: { p256dh: 'phone-key', auth: 'phone-auth' },
+        },
+      }),
+    ])
+    const sender = vi.fn<SendNotificationFunction>(async () => ({
+      statusCode: 201,
+      body: '',
+      headers: {},
+    }))
+    const ctx = createExecutionContext()
+
+    const response = await handleRequest(
+      request('/notifications/turn', {
+        method: 'POST',
+        headers: { authorization: 'Bearer valid-token' },
+        body: '{"kind":"nudge"}',
+      }),
+      env,
+      ctx,
+      dependencies(fetcher, sender),
+    )
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(202)
+    expect(JSON.parse(sender.mock.calls[0]?.[1] ?? '{}')).toMatchObject({
+      title: 'Важное сообщение',
+      body: 'Слышь, вражина, ходи или сдавайся!',
+    })
+  })
+
+  it('rejects unknown notification kinds', async () => {
+    const response = await handleRequest(
+      request('/notifications/turn', {
+        method: 'POST',
+        headers: { authorization: 'Bearer valid-token' },
+        body: '{"kind":"spam"}',
+      }),
+      env,
+      createExecutionContext(),
+      dependencies(queuedFetch([])),
+    )
+
+    expect(response.status).toBe(400)
+  })
+
   it('skips malformed subscriptions and logs expired deliveries safely', async () => {
     const fetcher = queuedFetch([
       json({ users: [{ email: 'hinhillaa@gmail.com' }] }),

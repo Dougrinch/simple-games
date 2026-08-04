@@ -40,6 +40,7 @@ interface GameScreenProps {
   onRateMove?: (moveNumber: number, rating: WordRating | null) => void
   onRollback: () => void
   onResign: () => void
+  onNudge?: () => void
   onCreateGame: () => void
 }
 
@@ -75,6 +76,7 @@ export function GameScreen({
   onRateMove = () => undefined,
   onRollback,
   onResign,
+  onNudge = () => undefined,
   onCreateGame,
 }: GameScreenProps) {
   const isActive = game.status === 'active'
@@ -247,32 +249,41 @@ export function GameScreen({
       <section className="game-status" aria-live="polite">
         {game.status === 'active' ? (
           <>
-            <button
-              className={`turn-pill turn-action ${
-                resignationArmed
-                  ? 'is-surrender'
-                  : isMyTurn
-                    ? 'is-mine'
-                    : 'is-enemy'
-              }`}
-              type="button"
-              disabled={!canResign}
-              onClick={() => {
-                if (resignationArmed) {
-                  setResignationArmed(false)
-                  setResignationOpen(true)
-                  return
-                }
-
-                setResignationArmed(true)
-              }}
-            >
-              {resignationArmed
-                ? 'Сдаться'
-                : isMyTurn
-                  ? 'Мой ход'
-                  : 'Ход вражины'}
-            </button>
+            {resignationArmed ? (
+              <div className="turn-actions">
+                <button
+                  className="turn-pill turn-action is-surrender"
+                  type="button"
+                  onClick={() => {
+                    setResignationArmed(false)
+                    setResignationOpen(true)
+                  }}
+                >
+                  Сдаться
+                </button>
+                <button
+                  className="turn-pill turn-action is-nudge"
+                  type="button"
+                  onClick={() => {
+                    setResignationArmed(false)
+                    onNudge()
+                  }}
+                >
+                  Пнуть вражину
+                </button>
+              </div>
+            ) : (
+              <button
+                className={`turn-pill turn-action ${
+                  isMyTurn ? 'is-mine' : 'is-enemy'
+                }`}
+                type="button"
+                disabled={!canResign}
+                onClick={() => setResignationArmed(true)}
+              >
+                {isMyTurn ? 'Мой ход' : 'Ход вражины'}
+              </button>
+            )}
             {showRollback && (
               <button
                 className="danger-button rollback-button"
