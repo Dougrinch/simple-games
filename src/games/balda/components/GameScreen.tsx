@@ -261,16 +261,18 @@ export function GameScreen({
                 >
                   Сдаться
                 </button>
-                <button
-                  className="turn-pill turn-action is-nudge"
-                  type="button"
-                  onClick={() => {
-                    setResignationArmed(false)
-                    onNudge()
-                  }}
-                >
-                  Пнуть вражину
-                </button>
+                {!isMyTurn && (
+                  <button
+                    className="turn-pill turn-action is-nudge"
+                    type="button"
+                    onClick={() => {
+                      setResignationArmed(false)
+                      onNudge()
+                    }}
+                  >
+                    Пнуть вражину
+                  </button>
+                )}
               </div>
             ) : (
               <button
