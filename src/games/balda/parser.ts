@@ -208,7 +208,8 @@ function parseMove(value: unknown, key: string): BaldaMove {
     input.rating !== undefined &&
     input.rating !== 'bad' &&
     input.rating !== 'great' &&
-    input.rating !== 'angry'
+    input.rating !== 'angry' &&
+    input.rating !== 'terrible'
   ) {
     throw new GameDataError(`Invalid rating at moves.${key}.`)
   }
