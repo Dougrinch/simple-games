@@ -382,8 +382,8 @@ describe('GameScreen', () => {
     await user.click(word)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await user.click(word)
-    await user.click(screen.getByRole('button', { name: 'Иди нахрен 🤬' }))
-    expect(onRateMove).toHaveBeenCalledWith(1, 'angry')
+    await user.click(screen.getByRole('button', { name: 'Ужас 😱' }))
+    expect(onRateMove).toHaveBeenCalledWith(1, 'terrible')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Оценить' }),
