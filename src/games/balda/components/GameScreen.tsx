@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type TouchList as ReactTouchList,
+} from 'react'
 
 import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
 import type {
@@ -14,6 +21,8 @@ import { GameBoard } from './GameBoard'
 import { RussianKeyboard } from './RussianKeyboard'
 
 const MOVE_HIGHLIGHT_DURATION_MS = 3_000
+const TOUCH_TAP_MOVEMENT_THRESHOLD_PX = 10
+const TOUCH_CLICK_SUPPRESSION_MS = 1_000
 
 export interface LocalDraft {
   gameId: string
@@ -56,6 +65,124 @@ function ratingEmoji(rating: WordRating | undefined): string | null {
   if (rating === 'great') return '❤️'
   if (rating === 'angry') return '🤬'
   return null
+}
+
+function MoveHistoryWord({
+  move,
+  emoji,
+  onActivate,
+}: {
+  move: BaldaMove
+  emoji: string | null
+  onActivate: (move: BaldaMove) => void
+}) {
+  const touchStartRef = useRef<{
+    identifier: number
+    clientX: number
+    clientY: number
+  } | null>(null)
+  const suppressClicksUntilRef = useRef(0)
+  const activate = () => onActivate(move)
+  const findTouch = (touches: ReactTouchList, identifier: number) => {
+    for (let index = 0; index < touches.length; index += 1) {
+      const touch = touches[index]
+      if (touch?.identifier === identifier) {
+        return touch
+      }
+    }
+
+    return null
+  }
+  const movedPastTapThreshold = (clientX: number, clientY: number) => {
+    const touchStart = touchStartRef.current
+    return (
+      !touchStart ||
+      Math.hypot(
+        clientX - touchStart.clientX,
+        clientY - touchStart.clientY,
+      ) > TOUCH_TAP_MOVEMENT_THRESHOLD_PX
+    )
+  }
+
+  return (
+    <button
+      className="move-history-word"
+      type="button"
+      onClick={(event) => {
+        if (
+          event.detail > 0 &&
+          Date.now() < suppressClicksUntilRef.current
+        ) {
+          event.preventDefault()
+          return
+        }
+
+        activate()
+      }}
+      onTouchStart={(event) => {
+        if (event.touches.length !== 1) {
+          touchStartRef.current = null
+          return
+        }
+
+        const touch = event.touches[0]
+        touchStartRef.current = touch
+          ? {
+              identifier: touch.identifier,
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+            }
+          : null
+      }}
+      onTouchMove={(event) => {
+        const touchStart = touchStartRef.current
+        if (!touchStart || event.touches.length !== 1) {
+          touchStartRef.current = null
+          return
+        }
+
+        const touch = findTouch(event.touches, touchStart.identifier)
+        if (
+          !touch ||
+          movedPastTapThreshold(touch.clientX, touch.clientY)
+        ) {
+          touchStartRef.current = null
+        }
+      }}
+      onTouchEnd={(event) => {
+        const touchStart = touchStartRef.current
+        touchStartRef.current = null
+        if (!touchStart) {
+          return
+        }
+
+        const touch = findTouch(event.changedTouches, touchStart.identifier)
+        if (
+          !touch ||
+          Math.hypot(
+            touch.clientX - touchStart.clientX,
+            touch.clientY - touchStart.clientY,
+          ) > TOUCH_TAP_MOVEMENT_THRESHOLD_PX
+        ) {
+          return
+        }
+
+        // React registers a delegated dblclick listener. On iOS, WebKit can
+        // consequently retarget a rapid second click to the first button.
+        // Activating from the real touch target and cancelling its synthetic
+        // click avoids that WebKit path while retaining mouse and keyboard use.
+        event.preventDefault()
+        suppressClicksUntilRef.current = Date.now() + TOUCH_CLICK_SUPPRESSION_MS
+        activate()
+      }}
+      onTouchCancel={() => {
+        touchStartRef.current = null
+      }}
+    >
+      {move.word}
+      {emoji && ` ${emoji}`}
+    </button>
+  )
 }
 
 export function GameScreen({
@@ -397,14 +524,11 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      <button
-                        className="move-history-word"
-                        type="button"
-                        onClick={() => activateMove(move)}
-                      >
-                        {move.word}
-                        {emoji && ` ${emoji}`}
-                      </button>
+                      <MoveHistoryWord
+                        move={move}
+                        emoji={emoji}
+                        onActivate={activateMove}
+                      />
                     </li>
                   )
                 })}
@@ -423,14 +547,11 @@ export function GameScreen({
                   const emoji = ratingEmoji(move.rating)
                   return (
                     <li key={move.number}>
-                      <button
-                        className="move-history-word"
-                        type="button"
-                        onClick={() => activateMove(move)}
-                      >
-                        {move.word}
-                        {emoji && ` ${emoji}`}
-                      </button>
+                      <MoveHistoryWord
+                        move={move}
+                        emoji={emoji}
+                        onActivate={activateMove}
+                      />
                     </li>
                   )
                 })}
