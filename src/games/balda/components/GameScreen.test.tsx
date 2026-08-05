@@ -116,6 +116,18 @@ function gameScreenProps(
   }
 }
 
+function touchTap(element: Element, identifier: number) {
+  const touch = { identifier, clientX: 10, clientY: 10 }
+  fireEvent.touchStart(element, {
+    touches: [touch],
+    changedTouches: [touch],
+  })
+  fireEvent.touchEnd(element, {
+    touches: [],
+    changedTouches: [touch],
+  })
+}
+
 describe('GameScreen', () => {
   it('opens the Russian keyboard and lets the player choose a draft letter', async () => {
     const user = userEvent.setup()
@@ -351,15 +363,11 @@ describe('GameScreen', () => {
     const firstLetter = screen.getByRole('gridcell', {
       name: 'Клетка 1, 0, буква А',
     })
-    fireEvent.pointerDown(word, { pointerId: 1, pointerType: 'touch' })
-    expect(firstLetter).not.toHaveClass('is-last-path')
-    fireEvent.pointerUp(word, { pointerId: 1, pointerType: 'touch' })
-    expect(firstLetter).not.toHaveClass('is-last-path')
-    fireEvent.click(word)
+    await user.click(word)
     expect(firstLetter).toHaveClass('is-last-path', 'is-last-letter')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    fireEvent.click(word)
+    await user.click(word)
     expect(
       screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
     ).toBeInTheDocument()
@@ -381,6 +389,70 @@ describe('GameScreen', () => {
       screen.queryByRole('button', { name: 'Оценить' }),
     ).not.toBeInTheDocument()
     expect(document.querySelector('.is-last-path')).not.toBeInTheDocument()
+  })
+
+  it('uses touch targets instead of WebKit retargeted clicks', () => {
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: thriceMovedGame(),
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+
+    const firstWord = screen.getByRole('button', { name: 'АБЕ' })
+    const secondWord = screen.getByRole('button', { name: 'ТРЕ' })
+
+    touchTap(firstWord, 1)
+    fireEvent.click(firstWord, { detail: 1 })
+    touchTap(secondWord, 2)
+    fireEvent.click(firstWord, { detail: 2 })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('gridcell', { name: 'Клетка 1, 2, буква Т' }),
+    ).toHaveClass('is-last-path', 'is-last-letter')
+  })
+
+  it('opens rating after two rapid touch taps on the same word', () => {
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: thriceMovedGame(),
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+
+    const word = screen.getByRole('button', { name: 'АБЕ' })
+
+    touchTap(word, 1)
+    fireEvent.click(word, { detail: 1 })
+    touchTap(word, 2)
+    fireEvent.click(word, { detail: 2 })
+
+    expect(
+      screen.getByRole('dialog', { name: 'Оценить слово АБЕ' }),
+    ).toBeInTheDocument()
+  })
+
+  it('switches rapidly between the player own words on touch', () => {
+    render(
+      <GameScreen {...gameScreenProps({ game: thriceMovedGame() })} />,
+    )
+
+    const firstWord = screen.getByRole('button', { name: 'ТРЕ' })
+    const secondWord = screen.getByRole('button', { name: 'АБЕ' })
+
+    touchTap(firstWord, 1)
+    fireEvent.click(firstWord, { detail: 1 })
+    touchTap(secondWord, 2)
+    fireEvent.click(firstWord, { detail: 2 })
+
+    expect(
+      screen.getByRole('gridcell', { name: 'Клетка 1, 0, буква А' }),
+    ).toHaveClass('is-last-path', 'is-last-letter')
   })
 
   it('switches between enemy words without rating the previous selection', () => {
@@ -405,6 +477,43 @@ describe('GameScreen', () => {
     expect(
       screen.getByRole('gridcell', { name: 'Клетка 1, 2, буква Т' }),
     ).toHaveClass('is-last-path', 'is-last-letter')
+  })
+
+  it('keeps native button semantics for keyboard activation', async () => {
+    const user = userEvent.setup()
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: thriceMovedGame(),
+          playerId: 'hinhillaa',
+        })}
+      />,
+    )
+
+    const firstWord = screen.getByRole('button', { name: 'АБЕ' })
+    const secondWord = screen.getByRole('button', { name: 'ТРЕ' })
+    const firstLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А',
+    })
+    const secondLetter = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 2, буква Т',
+    })
+
+    expect(firstWord.tagName).toBe('BUTTON')
+    expect(firstWord).toHaveAttribute('type', 'button')
+
+    firstWord.focus()
+    await user.keyboard('{Enter}')
+    expect(firstLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+    secondWord.focus()
+    await user.keyboard(' ')
+    expect(secondLetter).toHaveClass('is-last-path', 'is-last-letter')
+
+    await user.keyboard('{Enter}')
+    expect(
+      screen.getByRole('dialog', { name: 'Оценить слово ТРЕ' }),
+    ).toBeInTheDocument()
   })
 
   it('restarts the selection timer when another word is selected', () => {
