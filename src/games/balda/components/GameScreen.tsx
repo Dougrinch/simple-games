@@ -7,7 +7,12 @@ import {
   type TouchList as ReactTouchList,
 } from 'react'
 
-import { canRollbackLastMove, isAvailableCell, validateMove } from '../domain'
+import {
+  buildWord,
+  canRollbackLastMove,
+  isAvailableCell,
+  validateMove,
+} from '../domain'
 import type {
   BaldaGame,
   BaldaMove,
@@ -490,6 +495,21 @@ export function GameScreen({
             const result = validateMove(game, playerId, move)
 
             if (!result.ok) {
+              if (result.code === 'word-already-used') {
+                const repeatedWord = buildWord(
+                  game.board,
+                  move.cell,
+                  move.letter,
+                  move.path,
+                )
+                const repeatedMove = repeatedWord.ok
+                  ? moves.find(({ word }) => word === repeatedWord.value)
+                  : undefined
+
+                if (repeatedMove) {
+                  selectMove(repeatedMove.number)
+                }
+              }
               return
             }
 
