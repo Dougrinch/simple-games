@@ -1124,6 +1124,60 @@ describe('GameScreen', () => {
     Reflect.deleteProperty(document, 'elementFromPoint')
   })
 
+  it('selects the matching history move when a played word is repeated', () => {
+    const onSubmitMove = vi.fn()
+    const previousGame = {
+      ...movedGame(),
+      rollbackTargetMoveNumber: null,
+    }
+    render(
+      <GameScreen
+        {...gameScreenProps({
+          game: previousGame,
+          playerId: 'hinhillaa',
+          draft: {
+            gameId: 'game-test',
+            cell: '3_0',
+            letter: 'А',
+            expectedRevision: 1,
+          },
+          onSubmitMove,
+        })}
+      />,
+    )
+
+    const board = screen.getByRole('grid', { name: 'Игровое поле 5 на 5' })
+    const draftCell = screen.getByRole('gridcell', {
+      name: 'Клетка 3, 0, буква А, черновик',
+    })
+    const firstStartCell = screen.getByRole('gridcell', {
+      name: 'Клетка 2, 0, буква Б',
+    })
+    const secondStartCell = screen.getByRole('gridcell', {
+      name: 'Клетка 2, 1, буква Е',
+    })
+    const previousMoveCell = screen.getByRole('gridcell', {
+      name: 'Клетка 1, 0, буква А',
+    })
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi
+        .fn()
+        .mockReturnValueOnce(firstStartCell)
+        .mockReturnValue(secondStartCell),
+    })
+
+    fireEvent.pointerDown(draftCell, { pointerId: 5 })
+    fireEvent.pointerMove(board, { pointerId: 5 })
+    fireEvent.pointerMove(board, { pointerId: 5 })
+    fireEvent.pointerUp(board, { pointerId: 5 })
+
+    expect(onSubmitMove).not.toHaveBeenCalled()
+    expect(previousMoveCell).toHaveClass('is-last-path', 'is-last-letter')
+    expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
+    Reflect.deleteProperty(document, 'elementFromPoint')
+  })
+
   it('keeps the game status accessible without a transient status panel', () => {
     render(<GameScreen {...gameScreenProps({ pending: true })} />)
 
