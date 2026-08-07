@@ -496,6 +496,7 @@ export function GameScreen({
 
             if (!result.ok) {
               if (result.code === 'word-already-used') {
+                onClearDraft()
                 const repeatedWord = buildWord(
                   game.board,
                   move.cell,

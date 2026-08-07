@@ -1126,6 +1126,7 @@ describe('GameScreen', () => {
 
   it('selects the matching history move when a played word is repeated', () => {
     const onSubmitMove = vi.fn()
+    const onClearDraft = vi.fn()
     const previousGame = {
       ...movedGame(),
       rollbackTargetMoveNumber: null,
@@ -1142,6 +1143,7 @@ describe('GameScreen', () => {
             expectedRevision: 1,
           },
           onSubmitMove,
+          onClearDraft,
         })}
       />,
     )
@@ -1173,6 +1175,7 @@ describe('GameScreen', () => {
     fireEvent.pointerUp(board, { pointerId: 5 })
 
     expect(onSubmitMove).not.toHaveBeenCalled()
+    expect(onClearDraft).toHaveBeenCalledOnce()
     expect(previousMoveCell).toHaveClass('is-last-path', 'is-last-letter')
     expect(document.querySelectorAll('.is-last-path')).toHaveLength(3)
     Reflect.deleteProperty(document, 'elementFromPoint')
